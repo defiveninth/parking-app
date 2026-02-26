@@ -93,7 +93,13 @@ router.post("/", requireAuth, async (req, res) => {
     const bookingId = result.rows[0].id;
     // Decrement available_spots for the parking spot
     await query(
-      "UPDATE parking_spots SET available_spots = GREATEST(0, available_spots - 1) WHERE id = $1",
+      `UPDATE parking_spots
+       SET available_spots =
+         CASE
+           WHEN available_spots - 1 < 0 THEN 0
+           ELSE available_spots - 1
+         END
+       WHERE id = $1`,
       [parkingSpotId]
     );
     const getResult = await query(
@@ -129,7 +135,13 @@ router.patch("/:id", requireAuth, async (req, res) => {
     }
     if (status === "completed") {
       await query(
-        "UPDATE parking_spots SET available_spots = LEAST(total_spots, available_spots + 1) WHERE id = $1",
+        `UPDATE parking_spots
+         SET available_spots =
+           CASE
+             WHEN available_spots + 1 > total_spots THEN total_spots
+             ELSE available_spots + 1
+           END
+         WHERE id = $1`,
         [row.parking_spot_id]
       );
     }

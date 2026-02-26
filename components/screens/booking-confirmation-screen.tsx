@@ -19,9 +19,21 @@ export function BookingConfirmationScreen() {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <div className="flex flex-1 flex-col items-center px-5 pt-20 pb-6">
+      <div className="flex flex-1 flex-col items-center px-5 pt-14 pb-6 overflow-y-auto">
+        {/* Close / back button */}
+        <div className="flex w-full items-center justify-end">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-full"
+            onClick={() => navigate("home")}
+            aria-label="Close"
+          >
+            ✕
+          </Button>
+        </div>
         {/* Success indicator */}
-        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-accent/10">
+        <div className="mb-6 mt-4 flex h-16 w-16 items-center justify-center rounded-full bg-accent/10">
           <CheckCircle2 className="h-10 w-10 text-accent" />
         </div>
         <h1 className="text-2xl font-bold text-foreground">Booking Confirmed</h1>
