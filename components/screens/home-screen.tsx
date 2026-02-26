@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useApp } from "@/lib/app-context"
-import { parkingSpots, type ParkingSpot } from "@/lib/mock-data"
+import { parkingSpots as mockParkingSpots, type ParkingSpot } from "@/lib/mock-data"
 import { Button } from "@/components/ui/button"
 import {
   MapPin,
@@ -16,12 +16,35 @@ import {
   ChevronUp,
 } from "lucide-react"
 import dynamic from "next/dynamic"
+import { getParkingSpotsApi } from "@/lib/api"
 const AlmatyMap = dynamic(() => import("@/components/almaty-map").then(m => m.AlmatyMap), { ssr: false })
 
 export function HomeScreen() {
   const { navigate } = useApp()
-  const [selectedSpot, setSelectedSpot] = useState<ParkingSpot>(parkingSpots[0])
+  const [spots, setSpots] = useState<ParkingSpot[]>(mockParkingSpots)
+  const [selectedSpot, setSelectedSpot] = useState<ParkingSpot>(mockParkingSpots[0])
   const [sheetOpen, setSheetOpen] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const apiSpots = await getParkingSpotsApi()
+        if (!cancelled && apiSpots.length > 0) {
+          const normalized = apiSpots.map((s) => ({
+            ...s,
+          })) as ParkingSpot[]
+          setSpots(normalized)
+          setSelectedSpot(normalized[0])
+        }
+      } catch (err) {
+        console.error("Failed to load parking spots from API, using mock data.", err)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return (
     <div className="relative flex h-full flex-col bg-background">
@@ -29,7 +52,7 @@ export function HomeScreen() {
       <div className="relative flex-1 bg-muted">
         {/* Real interactive Almaty map */}
         <AlmatyMap
-          spots={parkingSpots}
+          spots={spots}
           selectedSpotId={selectedSpot.id}
           onSpotClick={(spot) => {
             setSelectedSpot(spot)

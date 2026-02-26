@@ -91,6 +91,31 @@ export function AlmatyMap({ spots, selectedSpotId, onSpotClick, onMapClick }: Al
   const onMapClickRef = useRef(onMapClick)
   onMapClickRef.current = onMapClick
 
+  // Update markers when spots or selection changes
+  const updateMarkers = useCallback(() => {
+    const map = mapRef.current
+    const L = LRef.current
+    if (!map || !L) return
+
+    // Remove old markers
+    markersRef.current.forEach((m) => m.remove())
+    markersRef.current = []
+
+    spots.forEach((spot) => {
+      const isSelected = spot.id === selectedSpotId
+      const marker = L.marker([spot.lat, spot.lng], {
+        icon: createParkingIcon(L, isSelected),
+      })
+        .addTo(map)
+        .on("click", (e: any) => {
+          L.DomEvent.stopPropagation(e)
+          onSpotClickRef.current(spot)
+        })
+
+      markersRef.current.push(marker)
+    })
+  }, [spots, selectedSpotId])
+
   // Initialize map once (client-only)
   useEffect(() => {
     let isMounted = true
@@ -122,6 +147,7 @@ export function AlmatyMap({ spots, selectedSpotId, onSpotClick, onMapClick }: Al
       })
 
       mapRef.current = map
+      updateMarkers()
     })()
 
     return () => {
@@ -132,32 +158,7 @@ export function AlmatyMap({ spots, selectedSpotId, onSpotClick, onMapClick }: Al
       }
       markersRef.current = []
     }
-  }, [])
-
-  // Update markers when spots or selection changes
-  const updateMarkers = useCallback(() => {
-    const map = mapRef.current
-    const L = LRef.current
-    if (!map || !L) return
-
-    // Remove old markers
-    markersRef.current.forEach((m) => m.remove())
-    markersRef.current = []
-
-    spots.forEach((spot) => {
-      const isSelected = spot.id === selectedSpotId
-      const marker = L.marker([spot.lat, spot.lng], {
-        icon: createParkingIcon(L, isSelected),
-      })
-        .addTo(map)
-        .on("click", (e: any) => {
-          L.DomEvent.stopPropagation(e)
-          onSpotClickRef.current(spot)
-        })
-
-      markersRef.current.push(marker)
-    })
-  }, [spots, selectedSpotId])
+  }, [updateMarkers])
 
   useEffect(() => {
     updateMarkers()

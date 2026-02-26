@@ -102,3 +102,25 @@ export async function getBookingsApi(token: string) {
   })
 }
 
+export interface ParkingSpotDto {
+  id: string
+  name: string
+  address: string
+  distance: string
+  availableSpots: number
+  totalSpots: number
+  pricePerHour: number
+  lat: number
+  lng: number
+  hasCovered: boolean
+  hasCharging: boolean
+  hasDisabled: boolean
+}
+
+export async function getParkingSpotsApi() {
+  return request<ParkingSpotDto[]>("/parking/spots", {
+    method: "GET",
+  })
+}
+
+

@@ -5,14 +5,18 @@ import { useApp } from "@/lib/app-context"
 import { Car } from "lucide-react"
 
 export function SplashScreen() {
-  const { navigate } = useApp()
+  const { navigate, user } = useApp()
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigate("login")
+      if (user) {
+        navigate("home")
+      } else {
+        navigate("login")
+      }
     }, 2500)
     return () => clearTimeout(timer)
-  }, [navigate])
+  }, [navigate, user])
 
   return (
     <div className="flex h-full flex-col items-center justify-center bg-foreground">
