@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useApp } from "@/lib/app-context"
+import { useTranslation } from "@/lib/i18n/language-context"
 import { getBookingsApi, updateBookingStatusApi, type BookingDto } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,6 +19,7 @@ export function EndParkingScreen() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { token } = useApp()
+  const { t } = useTranslation()
   const bookingIdParam = searchParams.get("bookingId")
 
   const [booking, setBooking] = useState<BookingDto | null>(null)
@@ -60,7 +62,7 @@ export function EndParkingScreen() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center bg-background">
-        <p className="text-sm text-muted-foreground">Loading...</p>
+        <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
       </div>
     )
   }
@@ -68,8 +70,8 @@ export function EndParkingScreen() {
   if (!booking) {
     return (
       <div className="flex h-full flex-col items-center justify-center bg-background gap-4">
-        <p className="text-sm text-muted-foreground">No active parking session found.</p>
-        <Button variant="outline" onClick={() => router.back()}>Go Back</Button>
+        <p className="text-sm text-muted-foreground">{t("endParking.noSession")}</p>
+        <Button variant="outline" onClick={() => router.back()}>{t("endParking.goBack")}</Button>
       </div>
     )
   }
@@ -81,7 +83,7 @@ export function EndParkingScreen() {
         <button onClick={() => router.back()} className="rounded-xl p-2 text-foreground hover:bg-secondary" aria-label="Go back">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="flex-1 text-lg font-bold text-foreground">End Parking</h1>
+        <h1 className="flex-1 text-lg font-bold text-foreground">{t("endParking.title")}</h1>
       </div>
 
       <div className="flex flex-1 flex-col items-center px-5 pb-6">
@@ -90,9 +92,9 @@ export function EndParkingScreen() {
           <Car className="h-12 w-12 text-accent" />
         </div>
 
-        <h2 className="text-xl font-bold text-foreground">Ready to leave?</h2>
+        <h2 className="text-xl font-bold text-foreground">{t("endParking.readyToLeave")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          {"Here's your parking session summary"}
+          {t("endParking.summary")}
         </p>
 
         {/* Session info */}
@@ -103,7 +105,7 @@ export function EndParkingScreen() {
                 <MapPin className="h-5 w-5 text-accent" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Parking Location</p>
+                <p className="text-xs text-muted-foreground">{t("endParking.parkingLocation")}</p>
                 <p className="font-semibold text-foreground">{booking.parkingName}</p>
               </div>
             </div>
@@ -113,7 +115,7 @@ export function EndParkingScreen() {
                 <Clock className="h-5 w-5 text-accent" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Time Spent</p>
+                <p className="text-xs text-muted-foreground">{t("endParking.timeSpent")}</p>
                 <p className="font-semibold text-foreground">{booking.duration}</p>
               </div>
             </div>
@@ -124,12 +126,12 @@ export function EndParkingScreen() {
                   <DollarSign className="h-5 w-5 text-accent" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs text-muted-foreground">Total Price</p>
+                  <p className="text-xs text-muted-foreground">{t("endParking.totalPrice")}</p>
                   <p className="text-xl font-bold text-foreground">{booking.price} KZT</p>
                 </div>
                 <div className="flex items-center gap-1 rounded-full bg-accent/10 px-3 py-1">
                   <CheckCircle2 className="h-3.5 w-3.5 text-accent" />
-                  <span className="text-xs font-medium text-accent">Paid</span>
+                  <span className="text-xs font-medium text-accent">{t("endParking.paid")}</span>
                 </div>
               </div>
             </div>
@@ -142,7 +144,7 @@ export function EndParkingScreen() {
             onClick={handleEndParking}
             disabled={ending}
           >
-            {ending ? "Completing..." : "Exit and Complete Parking"}
+            {ending ? t("endParking.completing") : t("endParking.exitComplete")}
           </Button>
         </div>
       </div>

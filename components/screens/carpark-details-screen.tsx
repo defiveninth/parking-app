@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { getParkingSpotApi, type ParkingSpotDto } from "@/lib/api"
+import { useTranslation } from "@/lib/i18n/language-context"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import {
@@ -18,6 +19,7 @@ import {
 
 export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
   const router = useRouter()
+  const { t } = useTranslation()
   const [spot, setSpot] = useState<ParkingSpotDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [hours, setHours] = useState(2)
@@ -46,7 +48,7 @@ export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center bg-background">
-        <p className="text-sm text-muted-foreground">Loading...</p>
+        <p className="text-sm text-muted-foreground">{t("carpark.loading")}</p>
       </div>
     )
   }
@@ -54,8 +56,8 @@ export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
   if (!spot) {
     return (
       <div className="flex h-full flex-col items-center justify-center bg-background gap-4">
-        <p className="text-sm text-muted-foreground">Parking spot not found.</p>
-        <Button variant="outline" onClick={() => router.back()}>Go Back</Button>
+        <p className="text-sm text-muted-foreground">{t("carpark.notFound")}</p>
+        <Button variant="outline" onClick={() => router.back()}>{t("carpark.goBack")}</Button>
       </div>
     )
   }
@@ -67,7 +69,7 @@ export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
         <button onClick={() => router.back()} className="rounded-xl p-2 text-foreground hover:bg-secondary" aria-label="Go back">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="flex-1 text-lg font-bold text-foreground">Car Park Details</h1>
+        <h1 className="flex-1 text-lg font-bold text-foreground">{t("carpark.title")}</h1>
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 pb-6">
@@ -82,12 +84,12 @@ export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
           <div className="mt-5 flex gap-3">
             <InfoBadge
               icon={<Clock className="h-4 w-4 text-accent" />}
-              label="Price"
+              label={t("carpark.price")}
               value={`${spot.pricePerHour} KZT/hr`}
             />
             <InfoBadge
               icon={<Car className="h-4 w-4 text-accent" />}
-              label="Available"
+              label={t("carpark.available")}
               value={`${spot.availableSpots}/${spot.totalSpots}`}
             />
           </div>
@@ -95,11 +97,11 @@ export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
 
         {/* Duration selector */}
         <div className="mt-6">
-          <h3 className="mb-3 text-sm font-semibold text-foreground">Select Duration</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">{t("carpark.selectDuration")}</h3>
           <div className="rounded-2xl bg-card p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-sm text-muted-foreground">Hours</span>
+                <span className="text-sm text-muted-foreground">{t("carpark.hours")}</span>
                 <div className="mt-1 flex items-center gap-4">
                   <button
                     onClick={() => setHours(Math.max(0, hours - 1))}
@@ -120,7 +122,7 @@ export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
               </div>
               <div className="text-3xl font-light text-border">:</div>
               <div>
-                <span className="text-sm text-muted-foreground">Minutes</span>
+                <span className="text-sm text-muted-foreground">{t("carpark.minutes")}</span>
                 <div className="mt-1 flex items-center gap-4">
                   <button
                     onClick={() => setMinutes(Math.max(0, minutes - 15))}
@@ -147,19 +149,19 @@ export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
 
         {/* Toggle options */}
         <div className="mt-6">
-          <h3 className="mb-3 text-sm font-semibold text-foreground">Options</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">{t("carpark.options")}</h3>
           <div className="flex flex-col gap-3">
             <ToggleOption
               icon={<Shield className="h-5 w-5 text-accent" />}
-              label="Covered Parking"
-              description="Protected from weather"
+              label={t("carpark.coveredParking")}
+              description={t("carpark.coveredDesc")}
               checked={coveredParking}
               onChange={setCoveredParking}
             />
             <ToggleOption
               icon={<Zap className="h-5 w-5 text-accent" />}
-              label="EV Charging"
-              description="Electric vehicle charging available"
+              label={t("carpark.evCharging")}
+              description={t("carpark.evDesc")}
               checked={evCharging}
               onChange={setEvCharging}
             />
@@ -169,7 +171,7 @@ export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
         {/* Price summary */}
         <div className="mt-6 rounded-2xl bg-accent/10 p-4">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Estimated Total</span>
+            <span className="text-sm text-muted-foreground">{t("carpark.estimatedTotal")}</span>
             <span className="text-2xl font-bold text-foreground">
               {Math.round((hours + minutes / 60) * spot.pricePerHour)} KZT
             </span>
@@ -182,14 +184,14 @@ export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
             className="h-14 rounded-xl bg-foreground text-base font-semibold text-background hover:bg-foreground/90"
             onClick={() => router.push(`/booking/payment?spotId=${spot.id}&hours=${hours}&minutes=${minutes}`)}
           >
-            Enter Now
+            {t("carpark.enterNow")}
           </Button>
           <Button
             variant="outline"
             className="h-14 rounded-xl border-border text-base font-semibold text-foreground hover:bg-secondary"
             onClick={() => router.push(`/booking/payment?spotId=${spot.id}&hours=${hours}&minutes=${minutes}`)}
           >
-            Reserve for Another Time
+            {t("carpark.reserveAnother")}
           </Button>
         </div>
       </div>

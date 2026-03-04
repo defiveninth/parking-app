@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AppProvider } from '@/lib/app-context'
+import { LanguageProvider } from '@/lib/i18n/language-context'
 import { PhoneFrame } from '@/components/phone-frame'
 import './globals.css'
 
@@ -29,11 +30,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} font-sans antialiased`}>
-        <AppProvider>
-          <PhoneFrame>
-            {children}
-          </PhoneFrame>
-        </AppProvider>
+        <LanguageProvider>
+          <AppProvider>
+            <PhoneFrame>
+              {children}
+            </PhoneFrame>
+          </AppProvider>
+        </LanguageProvider>
         <Analytics />
       </body>
     </html>

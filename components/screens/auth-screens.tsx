@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useApp } from "@/lib/app-context"
+import { useTranslation } from "@/lib/i18n/language-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,6 +14,7 @@ import { loginApi, registerApi } from "@/lib/api"
 export function LoginScreen() {
   const router = useRouter()
   const { setAuth } = useApp()
+  const { t } = useTranslation()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -40,29 +42,29 @@ export function LoginScreen() {
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-foreground">
             <Car className="h-8 w-8 text-background" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Welcome Back</h1>
-          <p className="text-sm text-muted-foreground">Sign in to your account</p>
+          <h1 className="text-2xl font-bold text-foreground">{t("login.welcomeBack")}</h1>
+          <p className="text-sm text-muted-foreground">{t("login.signInToAccount")}</p>
         </div>
 
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="email" className="text-sm font-medium text-foreground">Email</Label>
+            <Label htmlFor="email" className="text-sm font-medium text-foreground">{t("login.email")}</Label>
             <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
+              placeholder={t("login.emailPlaceholder")}
               className="h-12 rounded-xl border-border bg-card text-foreground placeholder:text-muted-foreground"
             />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="password" className="text-sm font-medium text-foreground">Password</Label>
+            <Label htmlFor="password" className="text-sm font-medium text-foreground">{t("login.password")}</Label>
             <div className="relative">
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="Enter password"
+                placeholder={t("login.passwordPlaceholder")}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="h-12 rounded-xl border-border bg-card pr-12 text-foreground placeholder:text-muted-foreground"
@@ -80,7 +82,7 @@ export function LoginScreen() {
               className="self-end text-sm font-medium text-accent"
               onClick={() => {}}
             >
-              Forgot password?
+              {t("login.forgotPassword")}
             </button>
           </div>
 
@@ -95,14 +97,14 @@ export function LoginScreen() {
             onClick={handleLogin}
             disabled={loading}
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading ? t("login.loggingIn") : t("login.login")}
           </Button>
         </div>
 
         <div className="mt-8 text-center">
-          <span className="text-sm text-muted-foreground">{"Don't have an account? "}</span>
+          <span className="text-sm text-muted-foreground">{t("login.noAccount")}</span>
           <button className="text-sm font-semibold text-accent" onClick={() => router.push("/signup")}>
-            Sign Up
+            {t("login.signUp")}
           </button>
         </div>
       </div>
@@ -113,6 +115,7 @@ export function LoginScreen() {
 export function SignupScreen() {
   const router = useRouter()
   const { setAuth } = useApp()
+  const { t } = useTranslation()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
@@ -152,63 +155,63 @@ export function SignupScreen() {
 
       <div className="flex flex-1 flex-col px-6">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-foreground">Create Account</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Fill in the details to get started</p>
+          <h1 className="text-2xl font-bold text-foreground">{t("signup.createAccount")}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t("signup.fillDetails")}</p>
         </div>
 
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="fullname" className="text-sm font-medium text-foreground">Full Name</Label>
+            <Label htmlFor="fullname" className="text-sm font-medium text-foreground">{t("signup.fullName")}</Label>
             <Input
               id="fullname"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="John Doe"
+              placeholder={t("signup.fullNamePlaceholder")}
               className="h-12 rounded-xl border-border bg-card text-foreground placeholder:text-muted-foreground"
             />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="signup-email" className="text-sm font-medium text-foreground">Email</Label>
+            <Label htmlFor="signup-email" className="text-sm font-medium text-foreground">{t("signup.email")}</Label>
             <Input
               id="signup-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
+              placeholder={t("signup.emailPlaceholder")}
               className="h-12 rounded-xl border-border bg-card text-foreground placeholder:text-muted-foreground"
             />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="phone" className="text-sm font-medium text-foreground">Phone Number</Label>
+            <Label htmlFor="phone" className="text-sm font-medium text-foreground">{t("signup.phone")}</Label>
             <Input
               id="phone"
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="+1 (555) 000-0000"
+              placeholder={t("signup.phonePlaceholder")}
               className="h-12 rounded-xl border-border bg-card text-foreground placeholder:text-muted-foreground"
             />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="car" className="text-sm font-medium text-foreground">Car Number</Label>
+            <Label htmlFor="car" className="text-sm font-medium text-foreground">{t("signup.carNumber")}</Label>
             <Input
               id="car"
               value={carNumber}
               onChange={(e) => setCarNumber(e.target.value)}
-              placeholder="ABC-1234"
+              placeholder={t("signup.carNumberPlaceholder")}
               className="h-12 rounded-xl border-border bg-card text-foreground placeholder:text-muted-foreground"
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="signup-password" className="text-sm font-medium text-foreground">Password</Label>
+            <Label htmlFor="signup-password" className="text-sm font-medium text-foreground">{t("signup.password")}</Label>
             <div className="relative">
               <Input
                 id="signup-password"
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Create password"
+                placeholder={t("signup.passwordPlaceholder")}
                 className="h-12 rounded-xl border-border bg-card pr-12 text-foreground placeholder:text-muted-foreground"
               />
               <button
@@ -233,14 +236,14 @@ export function SignupScreen() {
             onClick={handleSignup}
             disabled={loading}
           >
-            {loading ? "Creating account..." : "Create Account"}
+            {loading ? t("signup.creatingAccount") : t("signup.create")}
           </Button>
         </div>
 
         <div className="mt-6 text-center">
-          <span className="text-sm text-muted-foreground">Already have an account? </span>
+          <span className="text-sm text-muted-foreground">{t("signup.haveAccount")}</span>
           <button className="text-sm font-semibold text-accent" onClick={() => router.push("/login")}>
-            Login
+            {t("signup.login")}
           </button>
         </div>
       </div>
@@ -250,6 +253,7 @@ export function SignupScreen() {
 
 export function OTPScreen() {
   const router = useRouter()
+  const { t } = useTranslation()
   const [otp, setOtp] = useState("")
 
   return (
@@ -262,9 +266,9 @@ export function OTPScreen() {
 
       <div className="flex flex-1 flex-col items-center px-6">
         <div className="mb-10 text-center">
-          <h1 className="text-2xl font-bold text-foreground">Verification Code</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t("otp.title")}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {"We've sent a 6-digit code to your phone"}
+            {t("otp.subtitle")}
           </p>
         </div>
 
@@ -283,14 +287,14 @@ export function OTPScreen() {
         </div>
 
         <button className="mb-8 text-sm font-medium text-accent">
-          Resend code
+          {t("otp.resend")}
         </button>
 
         <Button
           className="h-14 w-full rounded-xl bg-foreground text-base font-semibold text-background hover:bg-foreground/90"
           onClick={() => router.push("/home")}
         >
-          Next
+          {t("otp.next")}
         </Button>
       </div>
     </div>

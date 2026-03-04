@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useApp } from "@/lib/app-context"
+import { useTranslation } from "@/lib/i18n/language-context"
 import { getUserProfileApi, updateUserProfileApi, type UserProfileDto } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,6 +13,7 @@ import { ArrowLeft, Camera } from "lucide-react"
 export function ProfileScreen() {
   const router = useRouter()
   const { token } = useApp()
+  const { t } = useTranslation()
   const [profile, setProfile] = useState<UserProfileDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -67,8 +69,8 @@ export function ProfileScreen() {
   if (!token) {
     return (
       <div className="flex h-full flex-col items-center justify-center bg-background gap-4">
-        <p className="text-sm text-muted-foreground">Sign in to view your profile.</p>
-        <Button variant="outline" onClick={() => router.push("/login")}>Go to Login</Button>
+        <p className="text-sm text-muted-foreground">{t("profile.signInPrompt")}</p>
+        <Button variant="outline" onClick={() => router.push("/login")}>{t("profile.goToLogin")}</Button>
       </div>
     )
   }
@@ -76,7 +78,7 @@ export function ProfileScreen() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center bg-background">
-        <p className="text-sm text-muted-foreground">Loading...</p>
+        <p className="text-sm text-muted-foreground">{t("profile.loading")}</p>
       </div>
     )
   }
@@ -90,7 +92,7 @@ export function ProfileScreen() {
         <button onClick={() => router.back()} className="rounded-xl p-2 text-foreground hover:bg-secondary" aria-label="Go back">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="flex-1 text-lg font-bold text-foreground">My Profile</h1>
+        <h1 className="flex-1 text-lg font-bold text-foreground">{t("profile.title")}</h1>
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 pb-6">
@@ -114,7 +116,7 @@ export function ProfileScreen() {
         {/* Form fields */}
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
-            <Label className="text-sm font-medium text-foreground">Full Name</Label>
+            <Label className="text-sm font-medium text-foreground">{t("profile.fullName")}</Label>
             <Input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -122,7 +124,7 @@ export function ProfileScreen() {
             />
           </div>
           <div className="flex flex-col gap-2">
-            <Label className="text-sm font-medium text-foreground">Email</Label>
+            <Label className="text-sm font-medium text-foreground">{t("profile.email")}</Label>
             <Input
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -130,7 +132,7 @@ export function ProfileScreen() {
             />
           </div>
           <div className="flex flex-col gap-2">
-            <Label className="text-sm font-medium text-foreground">Phone Number</Label>
+            <Label className="text-sm font-medium text-foreground">{t("profile.phone")}</Label>
             <Input
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
@@ -138,7 +140,7 @@ export function ProfileScreen() {
             />
           </div>
           <div className="flex flex-col gap-2">
-            <Label className="text-sm font-medium text-foreground">Car Number</Label>
+            <Label className="text-sm font-medium text-foreground">{t("profile.carNumber")}</Label>
             <Input
               value={form.carNumber}
               onChange={(e) => setForm({ ...form, carNumber: e.target.value })}
@@ -151,7 +153,7 @@ export function ProfileScreen() {
             onClick={handleSave}
             disabled={saving}
           >
-            {saving ? "Saving..." : "Save"}
+            {saving ? t("profile.saving") : t("profile.save")}
           </Button>
         </div>
       </div>

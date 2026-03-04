@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useApp } from "@/lib/app-context"
+import { useTranslation } from "@/lib/i18n/language-context"
 import { getParkingSpotApi, type ParkingSpotDto, createBookingApi } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
@@ -18,6 +19,7 @@ export function BookingPaymentScreen() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { token } = useApp()
+  const { t } = useTranslation()
 
   const spotId = searchParams.get("spotId") || ""
   const initialHours = Number(searchParams.get("hours")) || 2
@@ -42,7 +44,7 @@ export function BookingPaymentScreen() {
   if (loading || !spot) {
     return (
       <div className="flex h-full items-center justify-center bg-background">
-        <p className="text-sm text-muted-foreground">Loading...</p>
+        <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
       </div>
     )
   }
@@ -83,7 +85,7 @@ export function BookingPaymentScreen() {
         <button onClick={() => router.back()} className="rounded-xl p-2 text-foreground hover:bg-secondary" aria-label="Go back">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="flex-1 text-lg font-bold text-foreground">Book Space</h1>
+        <h1 className="flex-1 text-lg font-bold text-foreground">{t("bookingPayment.title")}</h1>
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 pb-6">
@@ -105,12 +107,12 @@ export function BookingPaymentScreen() {
 
         {/* Time selector */}
         <div className="mt-6">
-          <h3 className="mb-3 text-sm font-semibold text-foreground">Parking Duration</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">{t("bookingPayment.parkingDuration")}</h3>
           <div className="rounded-2xl bg-card p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-accent" />
-                <span className="text-sm text-muted-foreground">Duration</span>
+                <span className="text-sm text-muted-foreground">{t("bookingPayment.duration")}</span>
               </div>
               <span className="text-lg font-bold text-foreground">{duration[0]}h 00m</span>
             </div>
@@ -132,22 +134,22 @@ export function BookingPaymentScreen() {
 
         {/* Price calculation */}
         <div className="mt-6">
-          <h3 className="mb-3 text-sm font-semibold text-foreground">Price Summary</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">{t("bookingPayment.priceSummary")}</h3>
           <div className="rounded-2xl bg-card p-5 shadow-sm">
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Parking Fee</span>
+                <span className="text-sm text-muted-foreground">{t("bookingPayment.parkingFee")}</span>
                 <span className="text-sm font-medium text-foreground">
                   {spot.pricePerHour} KZT x {duration[0]}h
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Service Fee</span>
+                <span className="text-sm text-muted-foreground">{t("bookingPayment.serviceFee")}</span>
                 <span className="text-sm font-medium text-foreground">100 KZT</span>
               </div>
               <div className="border-t border-border pt-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-base font-bold text-foreground">Total</span>
+                  <span className="text-base font-bold text-foreground">{t("bookingPayment.total")}</span>
                   <span className="text-xl font-bold text-foreground">{price + 100} KZT</span>
                 </div>
               </div>
@@ -157,7 +159,7 @@ export function BookingPaymentScreen() {
 
         {/* Payment method */}
         <div className="mt-6">
-          <h3 className="mb-3 text-sm font-semibold text-foreground">Payment Method</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">{t("bookingPayment.paymentMethod")}</h3>
           <button
             className="flex w-full items-center gap-4 rounded-2xl bg-card p-4 shadow-sm"
             onClick={() => router.push("/payment-method")}
@@ -166,10 +168,10 @@ export function BookingPaymentScreen() {
               <CreditCard className="h-5 w-5 text-accent" />
             </div>
             <div className="flex-1 text-left">
-              <p className="text-sm font-semibold text-foreground">Visa ending in 4242</p>
-              <p className="text-xs text-muted-foreground">Expires 12/28</p>
+              <p className="text-sm font-semibold text-foreground">{t("bookingPayment.visaEnding")}</p>
+              <p className="text-xs text-muted-foreground">{t("bookingPayment.expires")}</p>
             </div>
-            <span className="text-xs font-medium text-accent">Change</span>
+            <span className="text-xs font-medium text-accent">{t("bookingPayment.change")}</span>
           </button>
         </div>
 
@@ -185,7 +187,7 @@ export function BookingPaymentScreen() {
           onClick={handleBook}
           disabled={submitting}
         >
-          {submitting ? "Processing..." : "Book Space"}
+          {submitting ? t("bookingPayment.processing") : t("bookingPayment.bookSpace")}
         </Button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { useTranslation } from "@/lib/i18n/language-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -8,6 +9,7 @@ import { ArrowLeft, CreditCard, Wifi } from "lucide-react"
 
 export function PaymentMethodScreen() {
   const router = useRouter()
+  const { t } = useTranslation()
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -16,7 +18,7 @@ export function PaymentMethodScreen() {
         <button onClick={() => router.back()} className="rounded-xl p-2 text-foreground hover:bg-secondary" aria-label="Go back">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="flex-1 text-lg font-bold text-foreground">Payment Method</h1>
+        <h1 className="flex-1 text-lg font-bold text-foreground">{t("payment.title")}</h1>
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 pb-6">
@@ -35,11 +37,11 @@ export function PaymentMethodScreen() {
             </p>
             <div className="mt-4 flex items-end justify-between">
               <div>
-                <p className="text-xs text-card/60">Card Holder</p>
+                <p className="text-xs text-card/60">{t("payment.cardHolder")}</p>
                 <p className="text-sm font-medium">Alex Johnson</p>
               </div>
               <div>
-                <p className="text-xs text-card/60">Expires</p>
+                <p className="text-xs text-card/60">{t("payment.expires")}</p>
                 <p className="text-sm font-medium">12/28</p>
               </div>
             </div>
@@ -48,27 +50,27 @@ export function PaymentMethodScreen() {
 
         {/* Add new card form */}
         <div className="mt-8">
-          <h3 className="mb-4 text-sm font-semibold text-foreground">Add New Card</h3>
+          <h3 className="mb-4 text-sm font-semibold text-foreground">{t("payment.addNewCard")}</h3>
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <Label className="text-sm font-medium text-foreground">Card Number</Label>
+              <Label className="text-sm font-medium text-foreground">{t("payment.cardNumber")}</Label>
               <Input
-                placeholder="0000 0000 0000 0000"
+                placeholder={t("payment.cardNumberPlaceholder")}
                 className="h-12 rounded-xl border-border bg-card font-mono text-foreground placeholder:text-muted-foreground"
               />
             </div>
             <div className="flex gap-4">
               <div className="flex flex-1 flex-col gap-2">
-                <Label className="text-sm font-medium text-foreground">Expiry Date</Label>
+                <Label className="text-sm font-medium text-foreground">{t("payment.expiryDate")}</Label>
                 <Input
-                  placeholder="MM/YY"
+                  placeholder={t("payment.expiryPlaceholder")}
                   className="h-12 rounded-xl border-border bg-card font-mono text-foreground placeholder:text-muted-foreground"
                 />
               </div>
               <div className="flex flex-1 flex-col gap-2">
-                <Label className="text-sm font-medium text-foreground">CVV</Label>
+                <Label className="text-sm font-medium text-foreground">{t("payment.cvv")}</Label>
                 <Input
-                  placeholder="123"
+                  placeholder={t("payment.cvvPlaceholder")}
                   className="h-12 rounded-xl border-border bg-card font-mono text-foreground placeholder:text-muted-foreground"
                 />
               </div>
@@ -78,7 +80,7 @@ export function PaymentMethodScreen() {
               className="mt-4 h-14 rounded-xl bg-foreground text-base font-semibold text-background hover:bg-foreground/90"
               onClick={() => router.back()}
             >
-              Make Payment
+              {t("payment.makePayment")}
             </Button>
           </div>
         </div>

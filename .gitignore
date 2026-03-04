@@ -6,12 +6,5 @@ __v0_jsx-dev-runtime.ts
 # Common ignores
 node_modules/
 .next/
-.env
 .env*.local
 .DS_Store
-
-# SQLite database files (generated at runtime)
-server/data/
-*.sqlite
-*.sqlite-shm
-*.sqlite-wal

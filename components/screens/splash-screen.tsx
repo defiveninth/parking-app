@@ -3,11 +3,13 @@
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useApp } from "@/lib/app-context"
+import { useTranslation } from "@/lib/i18n/language-context"
 import { Car } from "lucide-react"
 
 export function SplashScreen() {
   const router = useRouter()
   const { user } = useApp()
+  const { t } = useTranslation()
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -28,7 +30,7 @@ export function SplashScreen() {
         </div>
         <div className="flex flex-col items-center gap-2">
           <h1 className="text-3xl font-bold tracking-tight text-card">CarPark</h1>
-          <p className="text-sm text-muted-foreground">Your smart parking assistant</p>
+          <p className="text-sm text-muted-foreground">{t("splash.tagline")}</p>
         </div>
       </div>
 

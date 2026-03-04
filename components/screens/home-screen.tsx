@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { type ParkingSpotDto, getParkingSpotsApi } from "@/lib/api"
+import { useTranslation } from "@/lib/i18n/language-context"
 import {
   MapPin,
   Navigation,
@@ -17,6 +18,7 @@ const AlmatyMap = dynamic(() => import("@/components/almaty-map").then(m => m.Al
 
 export function HomeScreen() {
   const router = useRouter()
+  const { t } = useTranslation()
   const [spots, setSpots] = useState<ParkingSpotDto[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
@@ -69,7 +71,7 @@ export function HomeScreen() {
             <Search className="h-5 w-5 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search parking in Almaty..."
+              placeholder={t("home.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setSearchFocused(true)}
@@ -92,7 +94,7 @@ export function HomeScreen() {
             <div className="mt-2 max-h-72 overflow-y-auto rounded-2xl bg-card shadow-lg">
               {filteredSpots.length === 0 ? (
                 <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-                  No parking spots found
+                  {t("home.noSpotsFound")}
                 </div>
               ) : (
                 filteredSpots.map((spot) => (
@@ -109,7 +111,7 @@ export function HomeScreen() {
                       <p className="truncate text-sm font-medium text-foreground">{spot.name}</p>
                       <p className="truncate text-xs text-muted-foreground">{spot.address}</p>
                       <div className="mt-1 flex items-center gap-3">
-                        <span className="text-xs text-accent">{spot.availableSpots} spots</span>
+                        <span className="text-xs text-accent">{spot.availableSpots} {t("home.spots")}</span>
                         <span className="text-xs text-muted-foreground">{spot.pricePerHour} T/hr</span>
                       </div>
                     </div>
@@ -132,10 +134,10 @@ export function HomeScreen() {
       {/* Bottom Nav wrapper */}
       <div className="absolute right-0 bottom-0 left-0 z-[1000] flex flex-col">
         <div className="flex items-center justify-around border-t border-border bg-card px-2 pb-6 pt-2">
-          <NavItem icon={<MapPin className="h-5 w-5" />} label="Explore" active onClick={() => {}} />
-          <NavItem icon={<Clock className="h-5 w-5" />} label="History" onClick={() => router.push("/history")} />
-          <NavItem icon={<Settings className="h-5 w-5" />} label="Settings" onClick={() => router.push("/settings")} />
-          <NavItem icon={<User className="h-5 w-5" />} label="Profile" onClick={() => router.push("/profile")} />
+          <NavItem icon={<MapPin className="h-5 w-5" />} label={t("nav.explore")} active onClick={() => {}} />
+          <NavItem icon={<Clock className="h-5 w-5" />} label={t("nav.history")} onClick={() => router.push("/history")} />
+          <NavItem icon={<Settings className="h-5 w-5" />} label={t("nav.settings")} onClick={() => router.push("/settings")} />
+          <NavItem icon={<User className="h-5 w-5" />} label={t("nav.profile")} onClick={() => router.push("/profile")} />
         </div>
       </div>
     </div>

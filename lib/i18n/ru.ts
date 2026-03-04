@@ -1,0 +1,159 @@
+import type { TranslationKey } from "./en"
+
+export const ru: Record<TranslationKey, string> = {
+  // Splash
+  "splash.tagline": "Ваш умный помощник для парковки",
+
+  // Login
+  "login.welcomeBack": "С возвращением",
+  "login.signInToAccount": "Войдите в свой аккаунт",
+  "login.email": "Эл. почта",
+  "login.password": "Пароль",
+  "login.emailPlaceholder": "your@email.com",
+  "login.passwordPlaceholder": "Введите пароль",
+  "login.forgotPassword": "Забыли пароль?",
+  "login.loggingIn": "Вход...",
+  "login.login": "Войти",
+  "login.noAccount": "Нет аккаунта? ",
+  "login.signUp": "Регистрация",
+
+  // Signup
+  "signup.createAccount": "Создать аккаунт",
+  "signup.fillDetails": "Заполните данные для начала",
+  "signup.fullName": "Полное имя",
+  "signup.fullNamePlaceholder": "Иван Иванов",
+  "signup.email": "Эл. почта",
+  "signup.emailPlaceholder": "your@email.com",
+  "signup.phone": "Номер телефона",
+  "signup.phonePlaceholder": "+7 (777) 000-0000",
+  "signup.carNumber": "Номер автомобиля",
+  "signup.carNumberPlaceholder": "ABC-1234",
+  "signup.password": "Пароль",
+  "signup.passwordPlaceholder": "Создайте пароль",
+  "signup.creatingAccount": "Создание аккаунта...",
+  "signup.create": "Создать аккаунт",
+  "signup.haveAccount": "Уже есть аккаунт? ",
+  "signup.login": "Войти",
+
+  // OTP
+  "otp.title": "Код подтверждения",
+  "otp.subtitle": "Мы отправили 6-значный код на ваш телефон",
+  "otp.resend": "Отправить повторно",
+  "otp.next": "Далее",
+
+  // Home / Nav
+  "nav.explore": "Карта",
+  "nav.history": "История",
+  "nav.settings": "Настройки",
+  "nav.profile": "Профиль",
+  "home.searchPlaceholder": "Поиск парковки в Алматы...",
+  "home.noSpotsFound": "Парковочные места не найдены",
+  "home.spots": "мест",
+
+  // Car Park Details
+  "carpark.title": "Детали парковки",
+  "carpark.loading": "Загрузка...",
+  "carpark.notFound": "Парковочное место не найдено.",
+  "carpark.goBack": "Назад",
+  "carpark.price": "Цена",
+  "carpark.available": "Доступно",
+  "carpark.selectDuration": "Выберите длительность",
+  "carpark.hours": "Часы",
+  "carpark.minutes": "Минуты",
+  "carpark.options": "Опции",
+  "carpark.coveredParking": "Крытая парковка",
+  "carpark.coveredDesc": "Защита от непогоды",
+  "carpark.evCharging": "Зарядка для EV",
+  "carpark.evDesc": "Зарядка электромобилей доступна",
+  "carpark.estimatedTotal": "Ориентировочная сумма",
+  "carpark.enterNow": "Въехать сейчас",
+  "carpark.reserveAnother": "Забронировать на другое время",
+
+  // Booking Payment
+  "bookingPayment.title": "Бронирование",
+  "bookingPayment.parkingDuration": "Длительность парковки",
+  "bookingPayment.duration": "Длительность",
+  "bookingPayment.priceSummary": "Сводка по цене",
+  "bookingPayment.parkingFee": "Стоимость парковки",
+  "bookingPayment.serviceFee": "Сервисный сбор",
+  "bookingPayment.total": "Итого",
+  "bookingPayment.paymentMethod": "Способ оплаты",
+  "bookingPayment.visaEnding": "Visa **** 4242",
+  "bookingPayment.expires": "Срок 12/28",
+  "bookingPayment.change": "Изменить",
+  "bookingPayment.processing": "Обработка...",
+  "bookingPayment.bookSpace": "Забронировать",
+
+  // Booking Confirmation
+  "bookingConfirm.title": "Бронирование подтверждено",
+  "bookingConfirm.subtitle": "Ваше парковочное место забронировано",
+  "bookingConfirm.scanAtEntrance": "Сканируйте при входе",
+  "bookingConfirm.bookingId": "ID бронирования",
+  "bookingConfirm.details": "Детали бронирования",
+  "bookingConfirm.parking": "Парковка",
+  "bookingConfirm.duration": "Длительность",
+  "bookingConfirm.totalPrice": "Итого",
+  "bookingConfirm.goHome": "Вернуться на главную",
+
+  // End Parking
+  "endParking.title": "Завершить парковку",
+  "endParking.readyToLeave": "Готовы уехать?",
+  "endParking.summary": "Сводка вашей парковочной сессии",
+  "endParking.parkingLocation": "Место парковки",
+  "endParking.timeSpent": "Время",
+  "endParking.totalPrice": "Итого",
+  "endParking.paid": "Оплачено",
+  "endParking.completing": "Завершение...",
+  "endParking.exitComplete": "Выехать и завершить",
+  "endParking.noSession": "Активная парковочная сессия не найдена.",
+  "endParking.goBack": "Назад",
+
+  // Parking History
+  "history.title": "Парковочные сессии",
+  "history.signInPrompt": "Войдите, чтобы увидеть историю парковок.",
+  "history.goToLogin": "Войти",
+  "history.loadingBookings": "Загрузка бронирований...",
+  "history.activeSession": "Активная сессия",
+  "history.reserved": "Забронировано",
+  "history.completed": "Завершено",
+  "history.goHome": "Вернуться на главную",
+
+  // Payment Method
+  "payment.title": "Способ оплаты",
+  "payment.cardHolder": "Владелец карты",
+  "payment.expires": "Срок",
+  "payment.addNewCard": "Добавить новую карту",
+  "payment.cardNumber": "Номер карты",
+  "payment.cardNumberPlaceholder": "0000 0000 0000 0000",
+  "payment.expiryDate": "Срок действия",
+  "payment.expiryPlaceholder": "ММ/ГГ",
+  "payment.cvv": "CVV",
+  "payment.cvvPlaceholder": "123",
+  "payment.makePayment": "Оплатить",
+
+  // Profile
+  "profile.title": "Мой профиль",
+  "profile.signInPrompt": "Войдите, чтобы увидеть профиль.",
+  "profile.goToLogin": "Войти",
+  "profile.loading": "Загрузка...",
+  "profile.fullName": "Полное имя",
+  "profile.email": "Эл. почта",
+  "profile.phone": "Номер телефона",
+  "profile.carNumber": "Номер автомобиля",
+  "profile.saving": "Сохранение...",
+  "profile.save": "Сохранить",
+
+  // Settings
+  "settings.title": "Настройки",
+  "settings.paymentMethod": "Способ оплаты",
+  "settings.account": "Аккаунт",
+  "settings.language": "Язык",
+  "settings.termsOfUse": "Условия использования",
+  "settings.privacyPolicy": "Политика конфиденциальности",
+  "settings.logOut": "Выйти",
+  "settings.chooseLanguage": "Выберите язык",
+
+  // Common
+  "common.loading": "Загрузка...",
+  "common.goBack": "Назад",
+}

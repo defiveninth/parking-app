@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { getParkingSpotApi, type ParkingSpotDto } from "@/lib/api"
+import { useTranslation } from "@/lib/i18n/language-context"
 import { Button } from "@/components/ui/button"
 import {
   CheckCircle2,
@@ -15,6 +16,7 @@ import {
 export function BookingConfirmationScreen() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { t } = useTranslation()
   const [spot, setSpot] = useState<ParkingSpotDto | null>(null)
 
   const spotId = searchParams.get("spotId") || ""
@@ -52,8 +54,8 @@ export function BookingConfirmationScreen() {
         <div className="mb-6 mt-4 flex h-16 w-16 items-center justify-center rounded-full bg-accent/10">
           <CheckCircle2 className="h-10 w-10 text-accent" />
         </div>
-        <h1 className="text-2xl font-bold text-foreground">Booking Confirmed</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Your parking space is reserved</p>
+        <h1 className="text-2xl font-bold text-foreground">{t("bookingConfirm.title")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t("bookingConfirm.subtitle")}</p>
 
         {/* QR code */}
         <div className="mt-8 rounded-2xl bg-card p-6 shadow-sm">
@@ -73,32 +75,32 @@ export function BookingConfirmationScreen() {
           </div>
           <div className="mt-3 flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
             <QrCode className="h-4 w-4" />
-            <span>Scan at entrance</span>
+            <span>{t("bookingConfirm.scanAtEntrance")}</span>
           </div>
         </div>
 
         {/* Booking ID */}
         <div className="mt-4 rounded-xl bg-accent/10 px-4 py-2">
-          <span className="text-sm font-semibold text-accent">Booking ID: {bookingId}</span>
+          <span className="text-sm font-semibold text-accent">{t("bookingConfirm.bookingId")}: {bookingId}</span>
         </div>
 
         {/* Booking details */}
         <div className="mt-6 w-full rounded-2xl bg-card p-5 shadow-sm">
-          <h3 className="mb-4 text-sm font-semibold text-foreground">Booking Details</h3>
+          <h3 className="mb-4 text-sm font-semibold text-foreground">{t("bookingConfirm.details")}</h3>
           <div className="flex flex-col gap-4">
             <DetailRow
               icon={<MapPin className="h-4 w-4 text-accent" />}
-              label="Parking"
+              label={t("bookingConfirm.parking")}
               value={spotName}
             />
             <DetailRow
               icon={<Clock className="h-4 w-4 text-accent" />}
-              label="Duration"
+              label={t("bookingConfirm.duration")}
               value={`${duration}h 00m`}
             />
             <DetailRow
               icon={<DollarSign className="h-4 w-4 text-accent" />}
-              label="Total Price"
+              label={t("bookingConfirm.totalPrice")}
               value={`${price} KZT`}
             />
           </div>
@@ -109,7 +111,7 @@ export function BookingConfirmationScreen() {
             className="h-14 w-full rounded-xl bg-foreground text-base font-semibold text-background hover:bg-foreground/90"
             onClick={() => router.push("/home")}
           >
-            Go Back to Home Screen
+            {t("bookingConfirm.goHome")}
           </Button>
         </div>
       </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useApp } from "@/lib/app-context"
+import { useTranslation } from "@/lib/i18n/language-context"
 import { Button } from "@/components/ui/button"
 import {
   ArrowLeft,
@@ -17,6 +18,7 @@ import { getBookingsApi, type BookingDto } from "@/lib/api"
 export function ParkingHistoryScreen() {
   const router = useRouter()
   const { token } = useApp()
+  const { t } = useTranslation()
   const [bookings, setBookings] = useState<BookingDto[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -53,26 +55,26 @@ export function ParkingHistoryScreen() {
         <button onClick={() => router.back()} className="rounded-xl p-2 text-foreground hover:bg-secondary" aria-label="Go back">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="flex-1 text-lg font-bold text-foreground">Parking Sessions</h1>
+        <h1 className="flex-1 text-lg font-bold text-foreground">{t("history.title")}</h1>
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 pb-6">
         {!token && (
           <div className="mb-6 rounded-2xl bg-card p-4 text-sm text-muted-foreground">
             <p className="mb-3">
-              Sign in to see your parking history.
+              {t("history.signInPrompt")}
             </p>
             <Button
               className="h-10 rounded-xl bg-foreground text-xs font-semibold text-background hover:bg-foreground/90"
               onClick={() => router.push("/login")}
             >
-              Go to Login
+              {t("history.goToLogin")}
             </Button>
           </div>
         )}
 
         {token && loading && (
-          <p className="mb-4 text-sm text-muted-foreground">Loading bookings...</p>
+          <p className="mb-4 text-sm text-muted-foreground">{t("history.loadingBookings")}</p>
         )}
 
         {token && !loading && error && (
@@ -84,7 +86,7 @@ export function ParkingHistoryScreen() {
           <section className="mb-6">
             <div className="mb-3 flex items-center gap-2">
               <Timer className="h-4 w-4 text-accent" />
-              <h2 className="text-sm font-semibold text-foreground">Active Session</h2>
+              <h2 className="text-sm font-semibold text-foreground">{t("history.activeSession")}</h2>
             </div>
             {activeBookings.map((booking) => (
               <button
@@ -121,7 +123,7 @@ export function ParkingHistoryScreen() {
           <section className="mb-6">
             <div className="mb-3 flex items-center gap-2">
               <CalendarClock className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold text-foreground">Reserved</h2>
+              <h2 className="text-sm font-semibold text-foreground">{t("history.reserved")}</h2>
             </div>
             <div className="flex flex-col gap-3">
               {reservedBookings.map((booking) => (
@@ -159,7 +161,7 @@ export function ParkingHistoryScreen() {
           <section className="mb-6">
             <div className="mb-3 flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold text-foreground">Completed</h2>
+              <h2 className="text-sm font-semibold text-foreground">{t("history.completed")}</h2>
             </div>
             <div className="flex flex-col gap-3">
               {completedBookings.map((booking) => (
@@ -196,7 +198,7 @@ export function ParkingHistoryScreen() {
           className="mt-2 h-14 w-full rounded-xl bg-foreground text-base font-semibold text-background hover:bg-foreground/90"
           onClick={() => router.push("/home")}
         >
-          Go Back to Home Screen
+          {t("history.goHome")}
         </Button>
       </div>
     </div>
