@@ -1,21 +1,85 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useApp } from "@/lib/app-context"
-import { userProfile } from "@/lib/mock-data"
+import { getUserProfileApi, updateUserProfileApi, type UserProfileDto } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ArrowLeft, Camera } from "lucide-react"
 
 export function ProfileScreen() {
-  const { goBack } = useApp()
+  const { goBack, token, navigate } = useApp()
+  const [profile, setProfile] = useState<UserProfileDto | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({
-    name: userProfile.name,
-    email: userProfile.email,
-    phone: userProfile.phone,
-    carNumber: userProfile.carNumber,
+    name: "",
+    email: "",
+    phone: "",
+    carNumber: "",
   })
+
+  useEffect(() => {
+    if (!token) return
+    let cancelled = false
+    setLoading(true)
+    getUserProfileApi(token)
+      .then((data) => {
+        if (!cancelled) {
+          setProfile(data)
+          setForm({
+            name: data.name || "",
+            email: data.email || "",
+            phone: data.phone || "",
+            carNumber: data.carNumber || "",
+          })
+        }
+      })
+      .catch((err) => console.error("Failed to load profile", err))
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [token])
+
+  async function handleSave() {
+    if (!token) return
+    setSaving(true)
+    try {
+      const updated = await updateUserProfileApi(token, {
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        carNumber: form.carNumber,
+      })
+      setProfile(updated)
+      goBack()
+    } catch (err) {
+      console.error("Failed to save profile", err)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (!token) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center bg-background gap-4">
+        <p className="text-sm text-muted-foreground">Sign in to view your profile.</p>
+        <Button variant="outline" onClick={() => navigate("login")}>Go to Login</Button>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
+    )
+  }
+
+  const avatar = profile?.avatar || "U"
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -32,7 +96,7 @@ export function ProfileScreen() {
         <div className="mb-8 flex flex-col items-center">
           <div className="relative">
             <div className="flex h-24 w-24 items-center justify-center rounded-full bg-foreground text-2xl font-bold text-background">
-              {userProfile.avatar}
+              {avatar}
             </div>
             <button
               className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md"
@@ -82,9 +146,10 @@ export function ProfileScreen() {
 
           <Button
             className="mt-4 h-14 rounded-xl bg-foreground text-base font-semibold text-background hover:bg-foreground/90"
-            onClick={goBack}
+            onClick={handleSave}
+            disabled={saving}
           >
-            Save
+            {saving ? "Saving..." : "Save"}
           </Button>
         </div>
       </div>

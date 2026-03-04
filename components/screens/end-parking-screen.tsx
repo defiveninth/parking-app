@@ -1,7 +1,8 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useApp } from "@/lib/app-context"
-import { bookings } from "@/lib/mock-data"
+import { getBookingsApi, updateBookingStatusApi, type BookingDto } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import {
   ArrowLeft,
@@ -13,8 +14,61 @@ import {
 } from "lucide-react"
 
 export function EndParkingScreen() {
-  const { navigate, goBack } = useApp()
-  const booking = bookings[0]
+  const { navigate, goBack, token, params } = useApp()
+  const [booking, setBooking] = useState<BookingDto | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [ending, setEnding] = useState(false)
+
+  useEffect(() => {
+    if (!token) return
+    let cancelled = false
+    setLoading(true)
+    getBookingsApi(token)
+      .then((data) => {
+        if (!cancelled) {
+          // Find the active booking (or the one passed via params)
+          const active = params.bookingId
+            ? data.find((b) => String(b.id) === params.bookingId)
+            : data.find((b) => b.status === "active")
+          setBooking(active || data[0] || null)
+        }
+      })
+      .catch((err) => console.error("Failed to load bookings", err))
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [token, params.bookingId])
+
+  async function handleEndParking() {
+    if (!token || !booking) return
+    setEnding(true)
+    try {
+      await updateBookingStatusApi(token, booking.id, "completed")
+      navigate("home")
+    } catch (err) {
+      console.error("Failed to end parking", err)
+    } finally {
+      setEnding(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
+    )
+  }
+
+  if (!booking) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center bg-background gap-4">
+        <p className="text-sm text-muted-foreground">No active parking session found.</p>
+        <Button variant="outline" onClick={goBack}>Go Back</Button>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -81,9 +135,10 @@ export function EndParkingScreen() {
         <div className="mt-auto w-full pt-6">
           <Button
             className="h-14 w-full rounded-xl bg-foreground text-base font-semibold text-background hover:bg-foreground/90"
-            onClick={() => navigate("home")}
+            onClick={handleEndParking}
+            disabled={ending}
           >
-            Exit and Complete Parking
+            {ending ? "Completing..." : "Exit and Complete Parking"}
           </Button>
         </div>
       </div>

@@ -1,7 +1,8 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useApp } from "@/lib/app-context"
-import { parkingSpots } from "@/lib/mock-data"
+import { getParkingSpotApi, type ParkingSpotDto } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import {
   CheckCircle2,
@@ -13,9 +14,21 @@ import {
 
 export function BookingConfirmationScreen() {
   const { navigate, params } = useApp()
-  const spot = parkingSpots.find((s) => s.id === params.spotId) || parkingSpots[0]
-  const price = params.price || "7.50"
+  const [spot, setSpot] = useState<ParkingSpotDto | null>(null)
+  const price = params.price || "0"
   const duration = params.duration || "2"
+  const bookingId = params.bookingId || "BK-0000"
+
+  useEffect(() => {
+    if (!params.spotId) return
+    let cancelled = false
+    getParkingSpotApi(params.spotId)
+      .then((data) => { if (!cancelled) setSpot(data) })
+      .catch((err) => console.error("Failed to load spot", err))
+    return () => { cancelled = true }
+  }, [params.spotId])
+
+  const spotName = spot?.name || "Parking"
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -63,7 +76,7 @@ export function BookingConfirmationScreen() {
 
         {/* Booking ID */}
         <div className="mt-4 rounded-xl bg-accent/10 px-4 py-2">
-          <span className="text-sm font-semibold text-accent">Booking ID: BK-2847</span>
+          <span className="text-sm font-semibold text-accent">Booking ID: {bookingId}</span>
         </div>
 
         {/* Booking details */}
@@ -73,7 +86,7 @@ export function BookingConfirmationScreen() {
             <DetailRow
               icon={<MapPin className="h-4 w-4 text-accent" />}
               label="Parking"
-              value={spot.name}
+              value={spotName}
             />
             <DetailRow
               icon={<Clock className="h-4 w-4 text-accent" />}

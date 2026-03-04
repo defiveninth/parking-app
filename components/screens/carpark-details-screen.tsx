@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useApp } from "@/lib/app-context"
-import { parkingSpots } from "@/lib/mock-data"
+import { getParkingSpotApi, type ParkingSpotDto } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import {
@@ -18,11 +18,47 @@ import {
 
 export function CarParkDetailsScreen() {
   const { navigate, params, goBack } = useApp()
-  const spot = parkingSpots.find((s) => s.id === params.spotId) || parkingSpots[0]
+  const [spot, setSpot] = useState<ParkingSpotDto | null>(null)
+  const [loading, setLoading] = useState(true)
   const [hours, setHours] = useState(2)
   const [minutes, setMinutes] = useState(0)
-  const [coveredParking, setCoveredParking] = useState(spot.hasCovered)
+  const [coveredParking, setCoveredParking] = useState(false)
   const [evCharging, setEvCharging] = useState(false)
+
+  useEffect(() => {
+    if (!params.spotId) return
+    let cancelled = false
+    setLoading(true)
+    getParkingSpotApi(params.spotId)
+      .then((data) => {
+        if (!cancelled) {
+          setSpot(data)
+          setCoveredParking(!!data.hasCovered)
+        }
+      })
+      .catch((err) => console.error("Failed to load parking spot", err))
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [params.spotId])
+
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
+    )
+  }
+
+  if (!spot) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center bg-background gap-4">
+        <p className="text-sm text-muted-foreground">Parking spot not found.</p>
+        <Button variant="outline" onClick={goBack}>Go Back</Button>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-full flex-col bg-background">

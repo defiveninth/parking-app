@@ -123,4 +123,53 @@ export async function getParkingSpotsApi() {
   })
 }
 
+export async function getParkingSpotApi(id: string) {
+  return request<ParkingSpotDto>(`/parking/spots/${id}`, {
+    method: "GET",
+  })
+}
 
+export interface UserProfileDto {
+  name: string
+  email: string
+  phone: string | null
+  carNumber: string | null
+  avatar: string | null
+}
+
+export async function getUserProfileApi(token: string) {
+  return request<UserProfileDto>("/users/me", {
+    method: "GET",
+    authToken: token,
+  })
+}
+
+export async function updateUserProfileApi(
+  token: string,
+  payload: Partial<UserProfileDto>,
+) {
+  return request<UserProfileDto>("/users/me", {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+    authToken: token,
+  })
+}
+
+export async function updateBookingStatusApi(
+  token: string,
+  bookingId: string | number,
+  status: "active" | "completed" | "reserved",
+) {
+  return request<BookingDto>(`/bookings/${bookingId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+    authToken: token,
+  })
+}
+
+export async function getBookingApi(token: string, bookingId: string | number) {
+  return request<BookingDto>(`/bookings/${bookingId}`, {
+    method: "GET",
+    authToken: token,
+  })
+}

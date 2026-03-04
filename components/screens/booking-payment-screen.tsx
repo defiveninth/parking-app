@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useApp } from "@/lib/app-context"
-import { parkingSpots } from "@/lib/mock-data"
+import { getParkingSpotApi, type ParkingSpotDto, createBookingApi } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import {
@@ -12,16 +12,36 @@ import {
   MapPin,
   CreditCard,
 } from "lucide-react"
-import { createBookingApi } from "@/lib/api"
 
 export function BookingPaymentScreen() {
   const { navigate, params, goBack, token } = useApp()
-  const spot = parkingSpots.find((s) => s.id === params.spotId) || parkingSpots[0]
+  const [spot, setSpot] = useState<ParkingSpotDto | null>(null)
+  const [loading, setLoading] = useState(true)
   const initialHours = Number(params.hours) || 2
   const [duration, setDuration] = useState([initialHours])
-  const price = duration[0] * spot.pricePerHour
-  const [loading, setLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!params.spotId) return
+    let cancelled = false
+    setLoading(true)
+    getParkingSpotApi(params.spotId)
+      .then((data) => { if (!cancelled) setSpot(data) })
+      .catch((err) => console.error("Failed to load spot", err))
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [params.spotId])
+
+  if (loading || !spot) {
+    return (
+      <div className="flex h-full items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
+    )
+  }
+
+  const price = duration[0] * spot.pricePerHour
 
   async function handleBook() {
     if (!token) {
@@ -29,10 +49,10 @@ export function BookingPaymentScreen() {
       return
     }
     setError(null)
-    setLoading(true)
+    setSubmitting(true)
     try {
       const total = price + 100
-      await createBookingApi(token, {
+      const booking = await createBookingApi(token, {
         parkingSpotId: Number(spot.id),
         price: total,
         duration: `${duration[0]}h 00m`,
@@ -45,11 +65,12 @@ export function BookingPaymentScreen() {
         spotId: spot.id,
         price: String(total),
         duration: String(duration[0]),
+        bookingId: String(booking.id),
       })
     } catch (err: any) {
       setError(err?.message || "Failed to create booking")
     } finally {
-      setLoading(false)
+      setSubmitting(false)
     }
   }
 
@@ -160,9 +181,9 @@ export function BookingPaymentScreen() {
         <Button
           className="mt-8 h-14 w-full rounded-xl bg-foreground text-base font-semibold text-background hover:bg-foreground/90"
           onClick={handleBook}
-          disabled={loading}
+          disabled={submitting}
         >
-          {loading ? "Processing..." : "Book Space"}
+          {submitting ? "Processing..." : "Book Space"}
         </Button>
       </div>
     </div>

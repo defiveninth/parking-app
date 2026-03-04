@@ -21,7 +21,7 @@ const settingsItems = [
 ]
 
 export function SettingsScreen() {
-  const { navigate, goBack } = useApp()
+  const { navigate, goBack, clearAuth } = useApp()
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -55,7 +55,10 @@ export function SettingsScreen() {
         {/* Logout */}
         <button
           className="mt-6 flex w-full items-center gap-4 rounded-2xl bg-card px-5 py-4 shadow-sm"
-          onClick={() => navigate("login")}
+          onClick={() => {
+            clearAuth()
+            navigate("login")
+          }}
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10">
             <LogOut className="h-5 w-5 text-destructive" />

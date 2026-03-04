@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback } from "react"
 import "leaflet/dist/leaflet.css"
-import type { ParkingSpot } from "@/lib/mock-data"
+import type { ParkingSpotDto } from "@/lib/api"
 
 const ALMATY_CENTER: [number, number] = [43.2380, 76.9458]
 const DEFAULT_ZOOM = 14
@@ -73,9 +73,9 @@ function createUserIcon(L: LeafletNS) {
 }
 
 interface AlmatyMapProps {
-  spots: ParkingSpot[]
+  spots: ParkingSpotDto[]
   selectedSpotId: string | null
-  onSpotClick: (spot: ParkingSpot) => void
+  onSpotClick: (spot: ParkingSpotDto) => void
   onMapClick?: () => void
 }
 

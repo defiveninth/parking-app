@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "db:init": "node scripts/init-db.js"
+    "db:init": "node scripts/init-db.js",
+    "db:seed": "node scripts/seed-parkings.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

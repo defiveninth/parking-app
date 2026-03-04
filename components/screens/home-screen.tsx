@@ -2,45 +2,39 @@
 
 import { useEffect, useState } from "react"
 import { useApp } from "@/lib/app-context"
-import { parkingSpots as mockParkingSpots, type ParkingSpot } from "@/lib/mock-data"
-import { Button } from "@/components/ui/button"
+import { type ParkingSpotDto, getParkingSpotsApi } from "@/lib/api"
 import {
   MapPin,
   Navigation,
   Search,
-  Car,
   Clock,
   Settings,
   User,
   Menu,
-  ChevronUp,
 } from "lucide-react"
 import dynamic from "next/dynamic"
-import { getParkingSpotsApi } from "@/lib/api"
 const AlmatyMap = dynamic(() => import("@/components/almaty-map").then(m => m.AlmatyMap), { ssr: false })
 
 export function HomeScreen() {
   const { navigate } = useApp()
-  const [spots, setSpots] = useState<ParkingSpot[]>(mockParkingSpots)
-  const [selectedSpot, setSelectedSpot] = useState<ParkingSpot>(mockParkingSpots[0])
-  const [sheetOpen, setSheetOpen] = useState(false)
+  const [spots, setSpots] = useState<ParkingSpotDto[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
-    ;(async () => {
-      try {
-        const apiSpots = await getParkingSpotsApi()
+    setLoading(true)
+    getParkingSpotsApi()
+      .then((apiSpots) => {
         if (!cancelled && apiSpots.length > 0) {
-          const normalized = apiSpots.map((s) => ({
-            ...s,
-          })) as ParkingSpot[]
-          setSpots(normalized)
-          setSelectedSpot(normalized[0])
+          setSpots(apiSpots)
         }
-      } catch (err) {
-        console.error("Failed to load parking spots from API, using mock data.", err)
-      }
-    })()
+      })
+      .catch((err) => {
+        console.error("Failed to load parking spots from API.", err)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
     return () => {
       cancelled = true
     }
@@ -53,12 +47,11 @@ export function HomeScreen() {
         {/* Real interactive Almaty map */}
         <AlmatyMap
           spots={spots}
-          selectedSpotId={selectedSpot.id}
+          selectedSpotId={null}
           onSpotClick={(spot) => {
-            setSelectedSpot(spot)
-            setSheetOpen(true)
+            navigate("carpark-details", { spotId: spot.id })
           }}
-          onMapClick={() => setSheetOpen(false)}
+          onMapClick={() => {}}
         />
 
         {/* Search bar */}
@@ -81,62 +74,8 @@ export function HomeScreen() {
         </button>
       </div>
 
-      {/* Bottom Sheet + Nav wrapper */}
+      {/* Bottom Nav wrapper */}
       <div className="absolute right-0 bottom-0 left-0 z-[1000] flex flex-col">
-        {/* Parking detail sheet */}
-        {sheetOpen && selectedSpot && (
-          <div className="rounded-t-3xl bg-card px-5 pt-3 pb-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-            <button
-              onClick={() => setSheetOpen(false)}
-              className="mx-auto mb-3 block h-1 w-10 rounded-full bg-border"
-              aria-label="Close bottom sheet"
-            />
-
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-foreground">{selectedSpot.name}</h3>
-                <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-                  <MapPin className="h-3.5 w-3.5" />
-                  {selectedSpot.address}
-                </div>
-              </div>
-              <button
-                onClick={() => setSheetOpen(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary"
-                aria-label="Close"
-              >
-                <ChevronUp className="h-4 w-4 text-muted-foreground rotate-180" />
-              </button>
-            </div>
-
-            <div className="mt-3 flex items-center gap-3">
-              <div className="flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-2">
-                <Navigation className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-sm font-medium text-foreground">{selectedSpot.distance}</span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-2">
-                <Car className="h-3.5 w-3.5 text-accent" />
-                <span className="text-sm font-medium text-foreground">
-                  {selectedSpot.availableSpots} spots
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-2">
-                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-sm font-medium text-foreground">
-                  {selectedSpot.pricePerHour} KZT/hr
-                </span>
-              </div>
-            </div>
-
-            <Button
-              className="mt-4 h-12 w-full rounded-xl bg-foreground text-base font-semibold text-background hover:bg-foreground/90"
-              onClick={() => navigate("carpark-details", { spotId: selectedSpot.id })}
-            >
-              View Car Park
-            </Button>
-          </div>
-        )}
-
         {/* Bottom Nav - always visible */}
         <div className="flex items-center justify-around border-t border-border bg-card px-2 pb-6 pt-2">
           <NavItem icon={<MapPin className="h-5 w-5" />} label="Explore" active onClick={() => {}} />
