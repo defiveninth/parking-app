@@ -10,7 +10,7 @@ import {
   Clock,
   Settings,
   User,
-  Menu,
+  X,
 } from "lucide-react"
 import dynamic from "next/dynamic"
 const AlmatyMap = dynamic(() => import("@/components/almaty-map").then(m => m.AlmatyMap), { ssr: false })
@@ -19,6 +19,16 @@ export function HomeScreen() {
   const router = useRouter()
   const [spots, setSpots] = useState<ParkingSpotDto[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchFocused, setSearchFocused] = useState(false)
+
+  const filteredSpots = searchQuery.trim().length > 0
+    ? spots.filter(
+        (s) =>
+          s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          s.address.toLowerCase().includes(searchQuery.toLowerCase()),
+      )
+    : []
 
   useEffect(() => {
     let cancelled = false
@@ -57,11 +67,57 @@ export function HomeScreen() {
         <div className="absolute top-14 right-4 left-4 z-[1000]">
           <div className="flex items-center gap-3 rounded-2xl bg-card px-4 py-3 shadow-lg">
             <Search className="h-5 w-5 text-muted-foreground" />
-            <span className="flex-1 text-sm text-muted-foreground">Search parking in Almaty...</span>
-            <button className="rounded-xl bg-secondary p-2" aria-label="Menu">
-              <Menu className="h-4 w-4 text-foreground" />
-            </button>
+            <input
+              type="text"
+              placeholder="Search parking in Almaty..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+            />
+            {searchQuery.length > 0 && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="rounded-xl bg-secondary p-2"
+                aria-label="Clear search"
+              >
+                <X className="h-4 w-4 text-foreground" />
+              </button>
+            )}
           </div>
+
+          {/* Search results dropdown */}
+          {searchFocused && searchQuery.trim().length > 0 && (
+            <div className="mt-2 max-h-72 overflow-y-auto rounded-2xl bg-card shadow-lg">
+              {filteredSpots.length === 0 ? (
+                <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+                  No parking spots found
+                </div>
+              ) : (
+                filteredSpots.map((spot) => (
+                  <button
+                    key={spot.id}
+                    onClick={() => {
+                      setSearchQuery("")
+                      router.push(`/parking/${spot.id}`)
+                    }}
+                    className="flex w-full items-start gap-3 border-b border-border px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-secondary/50"
+                  >
+                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-foreground">{spot.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">{spot.address}</p>
+                      <div className="mt-1 flex items-center gap-3">
+                        <span className="text-xs text-accent">{spot.availableSpots} spots</span>
+                        <span className="text-xs text-muted-foreground">{spot.pricePerHour} T/hr</span>
+                      </div>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
         </div>
 
         {/* Current location button */}
