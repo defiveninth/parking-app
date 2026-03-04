@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useApp } from "@/lib/app-context"
+import { useRouter } from "next/navigation"
 import { getParkingSpotApi, type ParkingSpotDto } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
@@ -16,8 +16,8 @@ import {
   Clock,
 } from "lucide-react"
 
-export function CarParkDetailsScreen() {
-  const { navigate, params, goBack } = useApp()
+export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
+  const router = useRouter()
   const [spot, setSpot] = useState<ParkingSpotDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [hours, setHours] = useState(2)
@@ -26,10 +26,10 @@ export function CarParkDetailsScreen() {
   const [evCharging, setEvCharging] = useState(false)
 
   useEffect(() => {
-    if (!params.spotId) return
+    if (!spotId) return
     let cancelled = false
     setLoading(true)
-    getParkingSpotApi(params.spotId)
+    getParkingSpotApi(spotId)
       .then((data) => {
         if (!cancelled) {
           setSpot(data)
@@ -41,7 +41,7 @@ export function CarParkDetailsScreen() {
         if (!cancelled) setLoading(false)
       })
     return () => { cancelled = true }
-  }, [params.spotId])
+  }, [spotId])
 
   if (loading) {
     return (
@@ -55,7 +55,7 @@ export function CarParkDetailsScreen() {
     return (
       <div className="flex h-full flex-col items-center justify-center bg-background gap-4">
         <p className="text-sm text-muted-foreground">Parking spot not found.</p>
-        <Button variant="outline" onClick={goBack}>Go Back</Button>
+        <Button variant="outline" onClick={() => router.back()}>Go Back</Button>
       </div>
     )
   }
@@ -64,7 +64,7 @@ export function CarParkDetailsScreen() {
     <div className="flex h-full flex-col bg-background">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-14 pb-4">
-        <button onClick={goBack} className="rounded-xl p-2 text-foreground hover:bg-secondary" aria-label="Go back">
+        <button onClick={() => router.back()} className="rounded-xl p-2 text-foreground hover:bg-secondary" aria-label="Go back">
           <ArrowLeft className="h-5 w-5" />
         </button>
         <h1 className="flex-1 text-lg font-bold text-foreground">Car Park Details</h1>
@@ -180,14 +180,14 @@ export function CarParkDetailsScreen() {
         <div className="mt-6 flex flex-col gap-3">
           <Button
             className="h-14 rounded-xl bg-foreground text-base font-semibold text-background hover:bg-foreground/90"
-            onClick={() => navigate("booking-payment", { spotId: spot.id, hours: String(hours), minutes: String(minutes) })}
+            onClick={() => router.push(`/booking/payment?spotId=${spot.id}&hours=${hours}&minutes=${minutes}`)}
           >
             Enter Now
           </Button>
           <Button
             variant="outline"
             className="h-14 rounded-xl border-border text-base font-semibold text-foreground hover:bg-secondary"
-            onClick={() => navigate("booking-payment", { spotId: spot.id, hours: String(hours), minutes: String(minutes) })}
+            onClick={() => router.push(`/booking/payment?spotId=${spot.id}&hours=${hours}&minutes=${minutes}`)}
           >
             Reserve for Another Time
           </Button>

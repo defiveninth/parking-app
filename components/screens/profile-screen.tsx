@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { useApp } from "@/lib/app-context"
 import { getUserProfileApi, updateUserProfileApi, type UserProfileDto } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -9,7 +10,8 @@ import { Label } from "@/components/ui/label"
 import { ArrowLeft, Camera } from "lucide-react"
 
 export function ProfileScreen() {
-  const { goBack, token, navigate } = useApp()
+  const router = useRouter()
+  const { token } = useApp()
   const [profile, setProfile] = useState<UserProfileDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -54,7 +56,7 @@ export function ProfileScreen() {
         carNumber: form.carNumber,
       })
       setProfile(updated)
-      goBack()
+      router.back()
     } catch (err) {
       console.error("Failed to save profile", err)
     } finally {
@@ -66,7 +68,7 @@ export function ProfileScreen() {
     return (
       <div className="flex h-full flex-col items-center justify-center bg-background gap-4">
         <p className="text-sm text-muted-foreground">Sign in to view your profile.</p>
-        <Button variant="outline" onClick={() => navigate("login")}>Go to Login</Button>
+        <Button variant="outline" onClick={() => router.push("/login")}>Go to Login</Button>
       </div>
     )
   }
@@ -85,7 +87,7 @@ export function ProfileScreen() {
     <div className="flex h-full flex-col bg-background">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-14 pb-4">
-        <button onClick={goBack} className="rounded-xl p-2 text-foreground hover:bg-secondary" aria-label="Go back">
+        <button onClick={() => router.back()} className="rounded-xl p-2 text-foreground hover:bg-secondary" aria-label="Go back">
           <ArrowLeft className="h-5 w-5" />
         </button>
         <h1 className="flex-1 text-lg font-bold text-foreground">My Profile</h1>

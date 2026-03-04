@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { useApp } from "@/lib/app-context"
 import { Button } from "@/components/ui/button"
 import {
@@ -14,7 +15,8 @@ import {
 import { getBookingsApi, type BookingDto } from "@/lib/api"
 
 export function ParkingHistoryScreen() {
-  const { navigate, goBack, token } = useApp()
+  const router = useRouter()
+  const { token } = useApp()
   const [bookings, setBookings] = useState<BookingDto[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -48,7 +50,7 @@ export function ParkingHistoryScreen() {
     <div className="flex h-full flex-col bg-background">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-14 pb-4">
-        <button onClick={goBack} className="rounded-xl p-2 text-foreground hover:bg-secondary" aria-label="Go back">
+        <button onClick={() => router.back()} className="rounded-xl p-2 text-foreground hover:bg-secondary" aria-label="Go back">
           <ArrowLeft className="h-5 w-5" />
         </button>
         <h1 className="flex-1 text-lg font-bold text-foreground">Parking Sessions</h1>
@@ -62,7 +64,7 @@ export function ParkingHistoryScreen() {
             </p>
             <Button
               className="h-10 rounded-xl bg-foreground text-xs font-semibold text-background hover:bg-foreground/90"
-              onClick={() => navigate("login")}
+              onClick={() => router.push("/login")}
             >
               Go to Login
             </Button>
@@ -88,7 +90,7 @@ export function ParkingHistoryScreen() {
               <button
                 key={booking.id}
                 className="w-full rounded-2xl bg-accent/10 p-4 border border-accent/20"
-                onClick={() => navigate("end-parking")}
+                onClick={() => router.push("/end-parking")}
               >
                 <div className="flex items-start gap-3">
                   <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent/20">
@@ -192,7 +194,7 @@ export function ParkingHistoryScreen() {
 
         <Button
           className="mt-2 h-14 w-full rounded-xl bg-foreground text-base font-semibold text-background hover:bg-foreground/90"
-          onClick={() => navigate("home")}
+          onClick={() => router.push("/home")}
         >
           Go Back to Home Screen
         </Button>

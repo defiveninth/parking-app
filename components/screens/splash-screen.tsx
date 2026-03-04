@@ -1,22 +1,24 @@
 "use client"
 
 import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { useApp } from "@/lib/app-context"
 import { Car } from "lucide-react"
 
 export function SplashScreen() {
-  const { navigate, user } = useApp()
+  const router = useRouter()
+  const { user } = useApp()
 
   useEffect(() => {
     const timer = setTimeout(() => {
       if (user) {
-        navigate("home")
+        router.replace("/home")
       } else {
-        navigate("login")
+        router.replace("/login")
       }
     }, 2500)
     return () => clearTimeout(timer)
-  }, [navigate, user])
+  }, [router, user])
 
   return (
     <div className="flex h-full flex-col items-center justify-center bg-foreground">

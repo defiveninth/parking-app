@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useApp } from "@/lib/app-context"
+import { useRouter } from "next/navigation"
 import { type ParkingSpotDto, getParkingSpotsApi } from "@/lib/api"
 import {
   MapPin,
@@ -16,7 +16,7 @@ import dynamic from "next/dynamic"
 const AlmatyMap = dynamic(() => import("@/components/almaty-map").then(m => m.AlmatyMap), { ssr: false })
 
 export function HomeScreen() {
-  const { navigate } = useApp()
+  const router = useRouter()
   const [spots, setSpots] = useState<ParkingSpotDto[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -44,12 +44,11 @@ export function HomeScreen() {
     <div className="relative flex h-full flex-col bg-background">
       {/* Map area */}
       <div className="relative flex-1 bg-muted">
-        {/* Real interactive Almaty map */}
         <AlmatyMap
           spots={spots}
           selectedSpotId={null}
           onSpotClick={(spot) => {
-            navigate("carpark-details", { spotId: spot.id })
+            router.push(`/parking/${spot.id}`)
           }}
           onMapClick={() => {}}
         />
@@ -76,12 +75,11 @@ export function HomeScreen() {
 
       {/* Bottom Nav wrapper */}
       <div className="absolute right-0 bottom-0 left-0 z-[1000] flex flex-col">
-        {/* Bottom Nav - always visible */}
         <div className="flex items-center justify-around border-t border-border bg-card px-2 pb-6 pt-2">
           <NavItem icon={<MapPin className="h-5 w-5" />} label="Explore" active onClick={() => {}} />
-          <NavItem icon={<Clock className="h-5 w-5" />} label="History" onClick={() => navigate("parking-history")} />
-          <NavItem icon={<Settings className="h-5 w-5" />} label="Settings" onClick={() => navigate("settings")} />
-          <NavItem icon={<User className="h-5 w-5" />} label="Profile" onClick={() => navigate("profile")} />
+          <NavItem icon={<Clock className="h-5 w-5" />} label="History" onClick={() => router.push("/history")} />
+          <NavItem icon={<Settings className="h-5 w-5" />} label="Settings" onClick={() => router.push("/settings")} />
+          <NavItem icon={<User className="h-5 w-5" />} label="Profile" onClick={() => router.push("/profile")} />
         </div>
       </div>
     </div>

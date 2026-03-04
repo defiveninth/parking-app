@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useApp } from "@/lib/app-context"
+import { useRouter, useSearchParams } from "next/navigation"
 import { getParkingSpotApi, type ParkingSpotDto } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import {
@@ -13,20 +13,23 @@ import {
 } from "lucide-react"
 
 export function BookingConfirmationScreen() {
-  const { navigate, params } = useApp()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [spot, setSpot] = useState<ParkingSpotDto | null>(null)
-  const price = params.price || "0"
-  const duration = params.duration || "2"
-  const bookingId = params.bookingId || "BK-0000"
+
+  const spotId = searchParams.get("spotId") || ""
+  const price = searchParams.get("price") || "0"
+  const duration = searchParams.get("duration") || "2"
+  const bookingId = searchParams.get("bookingId") || "BK-0000"
 
   useEffect(() => {
-    if (!params.spotId) return
+    if (!spotId) return
     let cancelled = false
-    getParkingSpotApi(params.spotId)
+    getParkingSpotApi(spotId)
       .then((data) => { if (!cancelled) setSpot(data) })
       .catch((err) => console.error("Failed to load spot", err))
     return () => { cancelled = true }
-  }, [params.spotId])
+  }, [spotId])
 
   const spotName = spot?.name || "Parking"
 
@@ -39,10 +42,10 @@ export function BookingConfirmationScreen() {
             variant="ghost"
             size="icon"
             className="h-9 w-9 rounded-full"
-            onClick={() => navigate("home")}
+            onClick={() => router.push("/home")}
             aria-label="Close"
           >
-            ✕
+            {"✕"}
           </Button>
         </div>
         {/* Success indicator */}
@@ -104,7 +107,7 @@ export function BookingConfirmationScreen() {
         <div className="mt-auto w-full pt-6">
           <Button
             className="h-14 w-full rounded-xl bg-foreground text-base font-semibold text-background hover:bg-foreground/90"
-            onClick={() => navigate("home")}
+            onClick={() => router.push("/home")}
           >
             Go Back to Home Screen
           </Button>

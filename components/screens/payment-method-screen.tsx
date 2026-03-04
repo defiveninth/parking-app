@@ -1,19 +1,19 @@
 "use client"
 
-import { useApp } from "@/lib/app-context"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ArrowLeft, CreditCard, Wifi } from "lucide-react"
 
 export function PaymentMethodScreen() {
-  const { goBack } = useApp()
+  const router = useRouter()
 
   return (
     <div className="flex h-full flex-col bg-background">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-14 pb-4">
-        <button onClick={goBack} className="rounded-xl p-2 text-foreground hover:bg-secondary" aria-label="Go back">
+        <button onClick={() => router.back()} className="rounded-xl p-2 text-foreground hover:bg-secondary" aria-label="Go back">
           <ArrowLeft className="h-5 w-5" />
         </button>
         <h1 className="flex-1 text-lg font-bold text-foreground">Payment Method</h1>
@@ -76,7 +76,7 @@ export function PaymentMethodScreen() {
 
             <Button
               className="mt-4 h-14 rounded-xl bg-foreground text-base font-semibold text-background hover:bg-foreground/90"
-              onClick={goBack}
+              onClick={() => router.back()}
             >
               Make Payment
             </Button>

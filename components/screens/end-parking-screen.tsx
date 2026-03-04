@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useApp } from "@/lib/app-context"
 import { getBookingsApi, updateBookingStatusApi, type BookingDto } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -14,7 +15,11 @@ import {
 } from "lucide-react"
 
 export function EndParkingScreen() {
-  const { navigate, goBack, token, params } = useApp()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const { token } = useApp()
+  const bookingIdParam = searchParams.get("bookingId")
+
   const [booking, setBooking] = useState<BookingDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [ending, setEnding] = useState(false)
@@ -26,9 +31,8 @@ export function EndParkingScreen() {
     getBookingsApi(token)
       .then((data) => {
         if (!cancelled) {
-          // Find the active booking (or the one passed via params)
-          const active = params.bookingId
-            ? data.find((b) => String(b.id) === params.bookingId)
+          const active = bookingIdParam
+            ? data.find((b) => String(b.id) === bookingIdParam)
             : data.find((b) => b.status === "active")
           setBooking(active || data[0] || null)
         }
@@ -38,14 +42,14 @@ export function EndParkingScreen() {
         if (!cancelled) setLoading(false)
       })
     return () => { cancelled = true }
-  }, [token, params.bookingId])
+  }, [token, bookingIdParam])
 
   async function handleEndParking() {
     if (!token || !booking) return
     setEnding(true)
     try {
       await updateBookingStatusApi(token, booking.id, "completed")
-      navigate("home")
+      router.push("/home")
     } catch (err) {
       console.error("Failed to end parking", err)
     } finally {
@@ -65,7 +69,7 @@ export function EndParkingScreen() {
     return (
       <div className="flex h-full flex-col items-center justify-center bg-background gap-4">
         <p className="text-sm text-muted-foreground">No active parking session found.</p>
-        <Button variant="outline" onClick={goBack}>Go Back</Button>
+        <Button variant="outline" onClick={() => router.back()}>Go Back</Button>
       </div>
     )
   }
@@ -74,7 +78,7 @@ export function EndParkingScreen() {
     <div className="flex h-full flex-col bg-background">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-14 pb-4">
-        <button onClick={goBack} className="rounded-xl p-2 text-foreground hover:bg-secondary" aria-label="Go back">
+        <button onClick={() => router.back()} className="rounded-xl p-2 text-foreground hover:bg-secondary" aria-label="Go back">
           <ArrowLeft className="h-5 w-5" />
         </button>
         <h1 className="flex-1 text-lg font-bold text-foreground">End Parking</h1>

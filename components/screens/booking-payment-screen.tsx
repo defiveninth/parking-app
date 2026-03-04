@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useApp } from "@/lib/app-context"
 import { getParkingSpotApi, type ParkingSpotDto, createBookingApi } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -14,24 +15,29 @@ import {
 } from "lucide-react"
 
 export function BookingPaymentScreen() {
-  const { navigate, params, goBack, token } = useApp()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const { token } = useApp()
+
+  const spotId = searchParams.get("spotId") || ""
+  const initialHours = Number(searchParams.get("hours")) || 2
+
   const [spot, setSpot] = useState<ParkingSpotDto | null>(null)
   const [loading, setLoading] = useState(true)
-  const initialHours = Number(params.hours) || 2
   const [duration, setDuration] = useState([initialHours])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!params.spotId) return
+    if (!spotId) return
     let cancelled = false
     setLoading(true)
-    getParkingSpotApi(params.spotId)
+    getParkingSpotApi(spotId)
       .then((data) => { if (!cancelled) setSpot(data) })
       .catch((err) => console.error("Failed to load spot", err))
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [params.spotId])
+  }, [spotId])
 
   if (loading || !spot) {
     return (
@@ -45,9 +51,10 @@ export function BookingPaymentScreen() {
 
   async function handleBook() {
     if (!token) {
-      navigate("login")
+      router.push("/login")
       return
     }
+    if (!spot) return
     setError(null)
     setSubmitting(true)
     try {
@@ -61,12 +68,7 @@ export function BookingPaymentScreen() {
         startTime: "—",
         endTime: "—",
       })
-      navigate("booking-confirmation", {
-        spotId: spot.id,
-        price: String(total),
-        duration: String(duration[0]),
-        bookingId: String(booking.id),
-      })
+      router.push(`/booking/confirmation?spotId=${spot.id}&price=${total}&duration=${duration[0]}&bookingId=${booking.id}`)
     } catch (err: any) {
       setError(err?.message || "Failed to create booking")
     } finally {
@@ -78,7 +80,7 @@ export function BookingPaymentScreen() {
     <div className="flex h-full flex-col bg-background">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-14 pb-4">
-        <button onClick={goBack} className="rounded-xl p-2 text-foreground hover:bg-secondary" aria-label="Go back">
+        <button onClick={() => router.back()} className="rounded-xl p-2 text-foreground hover:bg-secondary" aria-label="Go back">
           <ArrowLeft className="h-5 w-5" />
         </button>
         <h1 className="flex-1 text-lg font-bold text-foreground">Book Space</h1>
@@ -158,7 +160,7 @@ export function BookingPaymentScreen() {
           <h3 className="mb-3 text-sm font-semibold text-foreground">Payment Method</h3>
           <button
             className="flex w-full items-center gap-4 rounded-2xl bg-card p-4 shadow-sm"
-            onClick={() => navigate("payment-method")}
+            onClick={() => router.push("/payment-method")}
           >
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent/10">
               <CreditCard className="h-5 w-5 text-accent" />

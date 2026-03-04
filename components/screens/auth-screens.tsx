@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { useApp } from "@/lib/app-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,7 +11,8 @@ import { ArrowLeft, Car, Eye, EyeOff } from "lucide-react"
 import { loginApi, registerApi } from "@/lib/api"
 
 export function LoginScreen() {
-  const { navigate, setAuth } = useApp()
+  const router = useRouter()
+  const { setAuth } = useApp()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -23,7 +25,7 @@ export function LoginScreen() {
     try {
       const res = await loginApi(email, password)
       setAuth(res.user, res.token)
-      navigate("home")
+      router.push("/home")
     } catch (err: any) {
       setError(err?.message || "Login failed")
     } finally {
@@ -99,7 +101,7 @@ export function LoginScreen() {
 
         <div className="mt-8 text-center">
           <span className="text-sm text-muted-foreground">{"Don't have an account? "}</span>
-          <button className="text-sm font-semibold text-accent" onClick={() => navigate("signup")}>
+          <button className="text-sm font-semibold text-accent" onClick={() => router.push("/signup")}>
             Sign Up
           </button>
         </div>
@@ -109,7 +111,8 @@ export function LoginScreen() {
 }
 
 export function SignupScreen() {
-  const { navigate, setAuth } = useApp()
+  const router = useRouter()
+  const { setAuth } = useApp()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
@@ -131,7 +134,7 @@ export function SignupScreen() {
         password,
       })
       setAuth(res.user, res.token)
-      navigate("home")
+      router.push("/home")
     } catch (err: any) {
       setError(err?.message || "Signup failed")
     } finally {
@@ -142,7 +145,7 @@ export function SignupScreen() {
   return (
     <div className="flex h-full flex-col bg-background">
       <div className="flex items-center px-4 pt-14 pb-4">
-        <button onClick={() => navigate("login")} className="rounded-xl p-2 text-foreground hover:bg-secondary" aria-label="Go back">
+        <button onClick={() => router.back()} className="rounded-xl p-2 text-foreground hover:bg-secondary" aria-label="Go back">
           <ArrowLeft className="h-5 w-5" />
         </button>
       </div>
@@ -236,7 +239,7 @@ export function SignupScreen() {
 
         <div className="mt-6 text-center">
           <span className="text-sm text-muted-foreground">Already have an account? </span>
-          <button className="text-sm font-semibold text-accent" onClick={() => navigate("login")}>
+          <button className="text-sm font-semibold text-accent" onClick={() => router.push("/login")}>
             Login
           </button>
         </div>
@@ -246,13 +249,13 @@ export function SignupScreen() {
 }
 
 export function OTPScreen() {
-  const { navigate, goBack } = useApp()
+  const router = useRouter()
   const [otp, setOtp] = useState("")
 
   return (
     <div className="flex h-full flex-col bg-background">
       <div className="flex items-center px-4 pt-14 pb-4">
-        <button onClick={goBack} className="rounded-xl p-2 text-foreground hover:bg-secondary" aria-label="Go back">
+        <button onClick={() => router.back()} className="rounded-xl p-2 text-foreground hover:bg-secondary" aria-label="Go back">
           <ArrowLeft className="h-5 w-5" />
         </button>
       </div>
@@ -285,7 +288,7 @@ export function OTPScreen() {
 
         <Button
           className="h-14 w-full rounded-xl bg-foreground text-base font-semibold text-background hover:bg-foreground/90"
-          onClick={() => navigate("home")}
+          onClick={() => router.push("/home")}
         >
           Next
         </Button>
