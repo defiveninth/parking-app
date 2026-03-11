@@ -11,7 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Lock, Users, Car, Plus, Pencil, Trash2, LogOut, Menu, X, MapPin, Zap, Accessibility, Building2 } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Lock, Users, Car, Plus, Pencil, Trash2, LogOut, Menu, X, MapPin, Zap, Accessibility, Building2, Globe } from "lucide-react"
 import {
   getAdminKey,
   setAdminKey,
@@ -29,12 +30,15 @@ import {
   type AdminParkingDto,
 } from "@/lib/api"
 import { MapPicker } from "@/components/admin/map-picker"
+import { useTranslation, localeLabels, type Locale } from "@/lib/i18n/language-context"
 
 type TabValue = "users" | "parkings"
 
 export default function AdminPage() {
+  const { t, locale, setLocale } = useTranslation()
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isAuthenticating, setIsAuthenticating] = useState(false)
   const [privateKey, setPrivateKey] = useState("")
   const [authError, setAuthError] = useState("")
   const [activeTab, setActiveTab] = useState<TabValue>("users")
@@ -62,16 +66,19 @@ export default function AdminPage() {
 
   const handleAuth = async () => {
     setAuthError("")
+    setIsAuthenticating(true)
     try {
       const valid = await verifyAdminKeyApi(privateKey)
       if (valid) {
         setAdminKey(privateKey)
         setIsAuthorized(true)
       } else {
-        setAuthError("Invalid private key")
+        setAuthError(t("admin.invalidKey"))
       }
     } catch {
-      setAuthError("Invalid private key")
+      setAuthError(t("admin.invalidKey"))
+    } finally {
+      setIsAuthenticating(false)
     }
   }
 
@@ -84,7 +91,7 @@ export default function AdminPage() {
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-muted/30">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+        <div className="animate-pulse text-muted-foreground">{t("common.loading")}</div>
       </div>
     )
   }
@@ -97,22 +104,49 @@ export default function AdminPage() {
             <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
               <Lock className="h-10 w-10 text-primary" />
             </div>
-            <CardTitle className="text-2xl font-bold">Admin Access</CardTitle>
-            <CardDescription className="text-base">Enter your private key to access the admin panel</CardDescription>
+            <CardTitle className="text-2xl font-bold">{t("admin.login")}</CardTitle>
+            <CardDescription className="text-base">{t("admin.loginSubtitle")}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <Input
-              type="password"
-              placeholder="Enter private key"
-              value={privateKey}
-              onChange={(e) => setPrivateKey(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAuth()}
-              className="h-12 text-base"
-            />
+            <div className="grid gap-2">
+              <Label htmlFor="privateKey">{t("admin.privateKey")}</Label>
+              <Input
+                id="privateKey"
+                type="password"
+                placeholder={t("admin.privateKeyPlaceholder")}
+                value={privateKey}
+                onChange={(e) => setPrivateKey(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAuth()}
+                className="h-12 text-base"
+              />
+            </div>
             {authError && <p className="text-sm text-destructive">{authError}</p>}
-            <Button onClick={handleAuth} className="h-12 text-base font-medium">
-              Authenticate
+            <Button onClick={handleAuth} disabled={isAuthenticating} className="h-12 text-base font-medium">
+              {isAuthenticating ? t("admin.authenticating") : t("admin.authenticate")}
             </Button>
+            
+            {/* Language switcher on login page */}
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <Globe className="h-4 w-4 text-muted-foreground" />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    {localeLabels[locale]}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center">
+                  {(Object.keys(localeLabels) as Locale[]).map((loc) => (
+                    <DropdownMenuItem
+                      key={loc}
+                      onClick={() => setLocale(loc)}
+                      className={locale === loc ? "bg-muted" : ""}
+                    >
+                      {localeLabels[loc]}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -120,8 +154,8 @@ export default function AdminPage() {
   }
 
   const navItems = [
-    { id: "users" as const, label: "Users", icon: Users },
-    { id: "parkings" as const, label: "Parking Spots", icon: Car },
+    { id: "users" as const, label: t("admin.users"), icon: Users },
+    { id: "parkings" as const, label: t("admin.parkings"), icon: Car },
   ]
 
   return (
@@ -141,7 +175,7 @@ export default function AdminPage() {
         }`}
       >
         <div className="flex h-16 items-center justify-between border-b px-6">
-          <h1 className="text-xl font-bold text-foreground">Admin Panel</h1>
+          <h1 className="text-xl font-bold text-foreground">{t("admin.title")}</h1>
           <Button
             variant="ghost"
             size="icon"
@@ -175,14 +209,37 @@ export default function AdminPage() {
           </ul>
         </nav>
 
+        {/* Language switcher and Logout */}
         <div className="border-t p-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
+              >
+                <Globe className="h-5 w-5" />
+                {t("admin.language")}: {localeLabels[locale]}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              {(Object.keys(localeLabels) as Locale[]).map((loc) => (
+                <DropdownMenuItem
+                  key={loc}
+                  onClick={() => setLocale(loc)}
+                  className={locale === loc ? "bg-muted" : ""}
+                >
+                  {localeLabels[loc]}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="ghost"
-            className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
+            className="mt-1 w-full justify-start gap-3 text-muted-foreground hover:text-destructive"
             onClick={handleLogout}
           >
             <LogOut className="h-5 w-5" />
-            Logout
+            {t("admin.logout")}
           </Button>
         </div>
       </aside>
@@ -219,8 +276,10 @@ export default function AdminPage() {
 // ============ USERS TAB ============
 
 function UsersTab() {
+  const { t } = useTranslation()
   const [users, setUsers] = useState<AdminUserDto[]>([])
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<AdminUserDto | null>(null)
   const [deleteUser, setDeleteUser] = useState<AdminUserDto | null>(null)
@@ -266,6 +325,7 @@ function UsersTab() {
   }
 
   const handleSave = async () => {
+    setSaving(true)
     try {
       if (editingUser) {
         await updateAdminUserApi(editingUser.id, {
@@ -288,6 +348,8 @@ function UsersTab() {
       loadUsers()
     } catch (err) {
       console.error("Save user failed:", err)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -305,7 +367,7 @@ function UsersTab() {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading users...</div>
+        <div className="animate-pulse text-muted-foreground">{t("common.loading")}</div>
       </div>
     )
   }
@@ -315,14 +377,14 @@ function UsersTab() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground lg:text-3xl">Users</h2>
+          <h2 className="text-2xl font-bold text-foreground lg:text-3xl">{t("admin.users")}</h2>
           <p className="mt-1 text-muted-foreground">
-            Manage user accounts ({users.length} total)
+            {users.length} total
           </p>
         </div>
         <Button onClick={openCreateDialog} size="lg" className="gap-2">
           <Plus className="h-5 w-5" />
-          Add User
+          {t("admin.addUser")}
         </Button>
       </div>
 
@@ -333,11 +395,11 @@ function UsersTab() {
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead className="w-20">ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Car Number</TableHead>
-                <TableHead className="w-32 text-right">Actions</TableHead>
+                <TableHead>{t("admin.name")}</TableHead>
+                <TableHead>{t("admin.email")}</TableHead>
+                <TableHead>{t("admin.phone")}</TableHead>
+                <TableHead>{t("admin.carNumber")}</TableHead>
+                <TableHead className="w-32 text-right">{t("admin.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -369,7 +431,7 @@ function UsersTab() {
               {users.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
-                    No users found. Create your first user.
+                    {t("admin.noUsers")}
                   </TableCell>
                 </TableRow>
               )}
@@ -404,7 +466,7 @@ function UsersTab() {
         {users.length === 0 && (
           <Card>
             <CardContent className="flex h-32 items-center justify-center text-muted-foreground">
-              No users found
+              {t("admin.noUsers")}
             </CardContent>
           </Card>
         )}
@@ -414,14 +476,14 @@ function UsersTab() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-xl">{editingUser ? "Edit User" : "Create User"}</DialogTitle>
+            <DialogTitle className="text-xl">{editingUser ? t("admin.editUser") : t("admin.addUser")}</DialogTitle>
             <DialogDescription>
-              {editingUser ? "Update the user information below." : "Fill in the details for the new user."}
+              {editingUser ? t("admin.editUser") : t("admin.addUser")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-5 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">{t("admin.name")}</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -430,7 +492,7 @@ function UsersTab() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("admin.email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -441,7 +503,7 @@ function UsersTab() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password">
-                Password {editingUser && <span className="font-normal text-muted-foreground">(leave empty to keep current)</span>}
+                {t("admin.password")} {editingUser && <span className="font-normal text-muted-foreground">({t("admin.passwordHint")})</span>}
               </Label>
               <Input
                 id="password"
@@ -453,7 +515,7 @@ function UsersTab() {
             </div>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div className="grid gap-2">
-                <Label htmlFor="phone">Phone</Label>
+                <Label htmlFor="phone">{t("admin.phone")}</Label>
                 <Input
                   id="phone"
                   value={formData.phone}
@@ -462,7 +524,7 @@ function UsersTab() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="carNumber">Car Number</Label>
+                <Label htmlFor="carNumber">{t("admin.carNumber")}</Label>
                 <Input
                   id="carNumber"
                   value={formData.carNumber}
@@ -474,9 +536,11 @@ function UsersTab() {
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancel
+              {t("admin.cancel")}
             </Button>
-            <Button onClick={handleSave}>Save</Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? (editingUser ? t("admin.saving") : t("admin.creating")) : t("admin.save")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -485,18 +549,18 @@ function UsersTab() {
       <AlertDialog open={!!deleteUser} onOpenChange={(open) => !open && setDeleteUser(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete User</AlertDialogTitle>
+            <AlertDialogTitle>{t("admin.deleteUser")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete <strong>{deleteUser?.name}</strong>? This action cannot be undone.
+              {t("admin.deleteUserConfirm")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("admin.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {t("admin.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -508,8 +572,10 @@ function UsersTab() {
 // ============ PARKINGS TAB ============
 
 function ParkingsTab() {
+  const { t } = useTranslation()
   const [parkings, setParkings] = useState<AdminParkingDto[]>([])
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingParking, setEditingParking] = useState<AdminParkingDto | null>(null)
   const [deleteParking, setDeleteParking] = useState<AdminParkingDto | null>(null)
@@ -579,6 +645,7 @@ function ParkingsTab() {
   }
 
   const handleSave = async () => {
+    setSaving(true)
     try {
       if (editingParking) {
         await updateAdminParkingApi(editingParking.id, formData)
@@ -589,6 +656,8 @@ function ParkingsTab() {
       loadParkings()
     } catch (err) {
       console.error("Save parking failed:", err)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -606,7 +675,7 @@ function ParkingsTab() {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading parking spots...</div>
+        <div className="animate-pulse text-muted-foreground">{t("common.loading")}</div>
       </div>
     )
   }
@@ -616,14 +685,14 @@ function ParkingsTab() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground lg:text-3xl">Parking Spots</h2>
+          <h2 className="text-2xl font-bold text-foreground lg:text-3xl">{t("admin.parkings")}</h2>
           <p className="mt-1 text-muted-foreground">
-            Manage parking locations ({parkings.length} total)
+            {parkings.length} total
           </p>
         </div>
         <Button onClick={openCreateDialog} size="lg" className="gap-2">
           <Plus className="h-5 w-5" />
-          Add Parking
+          {t("admin.addParking")}
         </Button>
       </div>
 
@@ -634,12 +703,12 @@ function ParkingsTab() {
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead className="w-16">ID</TableHead>
-                <TableHead className="min-w-[150px]">Name</TableHead>
-                <TableHead className="min-w-[200px]">Address</TableHead>
-                <TableHead className="w-32">Capacity</TableHead>
-                <TableHead className="w-32">Price/hr</TableHead>
-                <TableHead className="min-w-[160px]">Features</TableHead>
-                <TableHead className="w-28 text-right">Actions</TableHead>
+                <TableHead className="min-w-[150px]">{t("admin.name")}</TableHead>
+                <TableHead className="min-w-[200px]">{t("admin.address")}</TableHead>
+                <TableHead className="w-32">{t("admin.totalSpots")}</TableHead>
+                <TableHead className="w-32">{t("admin.pricePerHour")}</TableHead>
+                <TableHead className="min-w-[160px]">{t("admin.features")}</TableHead>
+                <TableHead className="w-28 text-right">{t("admin.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -669,19 +738,19 @@ function ParkingsTab() {
                       {parking.hasCovered && (
                         <Badge variant="secondary" className="gap-1">
                           <Building2 className="h-3 w-3" />
-                          Covered
+                          {t("admin.coveredParking")}
                         </Badge>
                       )}
                       {parking.hasCharging && (
                         <Badge variant="secondary" className="gap-1">
                           <Zap className="h-3 w-3" />
-                          EV
+                          {t("admin.evCharging")}
                         </Badge>
                       )}
                       {parking.hasDisabled && (
                         <Badge variant="secondary" className="gap-1">
                           <Accessibility className="h-3 w-3" />
-                          Accessible
+                          {t("admin.disabledAccess")}
                         </Badge>
                       )}
                       {!parking.hasCovered && !parking.hasCharging && !parking.hasDisabled && (
@@ -704,7 +773,7 @@ function ParkingsTab() {
               {parkings.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
-                    No parking spots found. Create your first parking spot.
+                    {t("admin.noParkings")}
                   </TableCell>
                 </TableRow>
               )}
@@ -738,34 +807,34 @@ function ParkingsTab() {
             </CardHeader>
             <CardContent className="flex flex-1 flex-col gap-3 pt-0">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Capacity</span>
+                <span className="text-muted-foreground">{t("admin.totalSpots")}</span>
                 <span>
                   <span className="font-medium text-primary">{parking.availableSpots}</span>
                   <span className="text-muted-foreground"> / {parking.totalSpots}</span>
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Price</span>
-                <span className="font-medium">{parking.pricePerHour} KZT/hr</span>
+                <span className="text-muted-foreground">{t("admin.pricePerHour")}</span>
+                <span className="font-medium">{parking.pricePerHour} KZT</span>
               </div>
               {(parking.hasCovered || parking.hasCharging || parking.hasDisabled) && (
                 <div className="flex flex-wrap gap-1 pt-1">
                   {parking.hasCovered && (
                     <Badge variant="secondary" className="gap-1 text-xs">
                       <Building2 className="h-3 w-3" />
-                      Covered
+                      {t("admin.coveredParking")}
                     </Badge>
                   )}
                   {parking.hasCharging && (
                     <Badge variant="secondary" className="gap-1 text-xs">
                       <Zap className="h-3 w-3" />
-                      EV
+                      {t("admin.evCharging")}
                     </Badge>
                   )}
                   {parking.hasDisabled && (
                     <Badge variant="secondary" className="gap-1 text-xs">
                       <Accessibility className="h-3 w-3" />
-                      Accessible
+                      {t("admin.disabledAccess")}
                     </Badge>
                   )}
                 </div>
@@ -776,7 +845,7 @@ function ParkingsTab() {
         {parkings.length === 0 && (
           <Card className="sm:col-span-2 lg:col-span-3">
             <CardContent className="flex h-32 items-center justify-center text-muted-foreground">
-              No parking spots found
+              {t("admin.noParkings")}
             </CardContent>
           </Card>
         )}
@@ -786,16 +855,16 @@ function ParkingsTab() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl lg:max-w-4xl">
           <DialogHeader>
-            <DialogTitle className="text-xl">{editingParking ? "Edit Parking" : "Create Parking"}</DialogTitle>
+            <DialogTitle className="text-xl">{editingParking ? t("admin.editParking") : t("admin.addParking")}</DialogTitle>
             <DialogDescription>
-              {editingParking ? "Update the parking spot information." : "Fill in the details for the new parking spot."}
+              {editingParking ? t("admin.editParking") : t("admin.addParking")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-6 py-4 lg:grid-cols-2">
             {/* Left column - Form fields */}
             <div className="flex flex-col gap-5">
               <div className="grid gap-2">
-                <Label htmlFor="p-name">Name</Label>
+                <Label htmlFor="p-name">{t("admin.name")}</Label>
                 <Input
                   id="p-name"
                   value={formData.name}
@@ -805,17 +874,16 @@ function ParkingsTab() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="p-address">Address</Label>
+                <Label htmlFor="p-address">{t("admin.address")}</Label>
                 <Input
                   id="p-address"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   className="h-11"
-                  placeholder="Full street address"
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="p-distance">Distance (display text)</Label>
+                <Label htmlFor="p-distance">{t("admin.distance")}</Label>
                 <Input
                   id="p-distance"
                   placeholder="e.g., 1.2 km"
@@ -826,7 +894,7 @@ function ParkingsTab() {
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="p-total">Total Spots</Label>
+                  <Label htmlFor="p-total">{t("admin.totalSpots")}</Label>
                   <Input
                     id="p-total"
                     type="number"
@@ -836,7 +904,7 @@ function ParkingsTab() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="p-available">Available</Label>
+                  <Label htmlFor="p-available">{t("admin.availableSpots")}</Label>
                   <Input
                     id="p-available"
                     type="number"
@@ -846,7 +914,7 @@ function ParkingsTab() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="p-price">Price (KZT)</Label>
+                  <Label htmlFor="p-price">{t("admin.pricePerHour")}</Label>
                   <Input
                     id="p-price"
                     type="number"
@@ -857,12 +925,12 @@ function ParkingsTab() {
                 </div>
               </div>
               <div className="grid gap-3">
-                <Label>Features</Label>
+                <Label>{t("admin.features")}</Label>
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between rounded-lg border p-3">
                     <div className="flex items-center gap-3">
                       <Building2 className="h-5 w-5 text-muted-foreground" />
-                      <Label htmlFor="p-covered" className="font-normal">Covered Parking</Label>
+                      <Label htmlFor="p-covered" className="font-normal">{t("admin.coveredParking")}</Label>
                     </div>
                     <Switch
                       id="p-covered"
@@ -873,7 +941,7 @@ function ParkingsTab() {
                   <div className="flex items-center justify-between rounded-lg border p-3">
                     <div className="flex items-center gap-3">
                       <Zap className="h-5 w-5 text-muted-foreground" />
-                      <Label htmlFor="p-charging" className="font-normal">EV Charging</Label>
+                      <Label htmlFor="p-charging" className="font-normal">{t("admin.evCharging")}</Label>
                     </div>
                     <Switch
                       id="p-charging"
@@ -884,7 +952,7 @@ function ParkingsTab() {
                   <div className="flex items-center justify-between rounded-lg border p-3">
                     <div className="flex items-center gap-3">
                       <Accessibility className="h-5 w-5 text-muted-foreground" />
-                      <Label htmlFor="p-disabled" className="font-normal">Accessible Parking</Label>
+                      <Label htmlFor="p-disabled" className="font-normal">{t("admin.disabledAccess")}</Label>
                     </div>
                     <Switch
                       id="p-disabled"
@@ -898,7 +966,7 @@ function ParkingsTab() {
 
             {/* Right column - Map */}
             <div className="flex flex-col gap-3">
-              <Label>Location (click on map to set)</Label>
+              <Label>{t("admin.location")} ({t("admin.clickToSelectLocation")})</Label>
               <div className="flex-1">
                 <MapPicker
                   lat={formData.lat}
@@ -920,9 +988,11 @@ function ParkingsTab() {
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancel
+              {t("admin.cancel")}
             </Button>
-            <Button onClick={handleSave}>Save</Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? (editingParking ? t("admin.saving") : t("admin.creating")) : t("admin.save")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -931,18 +1001,18 @@ function ParkingsTab() {
       <AlertDialog open={!!deleteParking} onOpenChange={(open) => !open && setDeleteParking(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Parking Spot</AlertDialogTitle>
+            <AlertDialogTitle>{t("admin.deleteParking")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete <strong>{deleteParking?.name}</strong>? This action cannot be undone.
+              {t("admin.deleteParkingConfirm")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("admin.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {t("admin.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
