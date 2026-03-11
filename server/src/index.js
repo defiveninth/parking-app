@@ -5,6 +5,7 @@ import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
 import parkingRoutes from "./routes/parking.js";
 import bookingRoutes from "./routes/bookings.js";
+import adminRoutes from "./routes/admin.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -16,6 +17,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/parking", parkingRoutes);
 app.use("/api/bookings", bookingRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ ok: true });

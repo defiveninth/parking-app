@@ -173,3 +173,189 @@ export async function getBookingApi(token: string, bookingId: string | number) {
     authToken: token,
   })
 }
+
+// ============ ADMIN API ============
+
+const ADMIN_KEY_STORAGE = "admin_private_key"
+
+export function getAdminKey(): string | null {
+  if (typeof window === "undefined") return null
+  return localStorage.getItem(ADMIN_KEY_STORAGE)
+}
+
+export function setAdminKey(key: string): void {
+  localStorage.setItem(ADMIN_KEY_STORAGE, key)
+}
+
+export function clearAdminKey(): void {
+  localStorage.removeItem(ADMIN_KEY_STORAGE)
+}
+
+async function adminRequest<T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const privateKey = getAdminKey()
+  if (!privateKey) {
+    throw new Error("Admin key not set")
+  }
+
+  const { headers, ...rest } = options
+
+  const res = await fetch(`${API_BASE}/admin${path}`, {
+    ...rest,
+    headers: {
+      "Content-Type": "application/json",
+      "X-Private-Key": privateKey,
+      ...(headers || {}),
+    },
+  })
+
+  let data: any = null
+  try {
+    data = await res.json()
+  } catch {
+    // ignore JSON parse errors
+  }
+
+  if (!res.ok) {
+    const message = data?.error || data?.message || "Request failed"
+    throw new Error(message)
+  }
+
+  return data as T
+}
+
+export async function verifyAdminKeyApi(key: string): Promise<boolean> {
+  const res = await fetch(`${API_BASE}/admin/verify`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Private-Key": key,
+    },
+  })
+  return res.ok
+}
+
+// Admin User DTOs
+export interface AdminUserDto {
+  id: number
+  email: string
+  name: string
+  phone: string | null
+  carNumber: string | null
+  avatar: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export async function getAdminUsersApi() {
+  return adminRequest<AdminUserDto[]>("/users", { method: "GET" })
+}
+
+export async function getAdminUserApi(id: number) {
+  return adminRequest<AdminUserDto>(`/users/${id}`, { method: "GET" })
+}
+
+export async function createAdminUserApi(data: {
+  email: string
+  password: string
+  name: string
+  phone?: string
+  carNumber?: string
+}) {
+  return adminRequest<AdminUserDto>("/users", {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updateAdminUserApi(
+  id: number,
+  data: {
+    email?: string
+    password?: string
+    name?: string
+    phone?: string
+    carNumber?: string
+  }
+) {
+  return adminRequest<AdminUserDto>(`/users/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteAdminUserApi(id: number) {
+  return adminRequest<{ success: boolean }>(`/users/${id}`, { method: "DELETE" })
+}
+
+// Admin Parking DTOs
+export interface AdminParkingDto {
+  id: number
+  name: string
+  address: string
+  distance: string
+  availableSpots: number
+  totalSpots: number
+  pricePerHour: number
+  lat: number
+  lng: number
+  hasCovered: boolean
+  hasCharging: boolean
+  hasDisabled: boolean
+  createdAt: string
+}
+
+export async function getAdminParkingApi() {
+  return adminRequest<AdminParkingDto[]>("/parking", { method: "GET" })
+}
+
+export async function getAdminParkingByIdApi(id: number) {
+  return adminRequest<AdminParkingDto>(`/parking/${id}`, { method: "GET" })
+}
+
+export async function createAdminParkingApi(data: {
+  name: string
+  address: string
+  distance?: string
+  availableSpots?: number
+  totalSpots?: number
+  pricePerHour?: number
+  lat: number
+  lng: number
+  hasCovered?: boolean
+  hasCharging?: boolean
+  hasDisabled?: boolean
+}) {
+  return adminRequest<AdminParkingDto>("/parking", {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updateAdminParkingApi(
+  id: number,
+  data: Partial<{
+    name: string
+    address: string
+    distance: string
+    availableSpots: number
+    totalSpots: number
+    pricePerHour: number
+    lat: number
+    lng: number
+    hasCovered: boolean
+    hasCharging: boolean
+    hasDisabled: boolean
+  }>
+) {
+  return adminRequest<AdminParkingDto>(`/parking/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteAdminParkingApi(id: number) {
+  return adminRequest<{ success: boolean }>(`/parking/${id}`, { method: "DELETE" })
+}
