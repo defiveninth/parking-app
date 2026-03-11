@@ -12,6 +12,7 @@ export const metadata: Metadata = {
   title: 'CarPark - Smart Parking Assistant',
   description: 'Find parking spots, reserve, start a parking session, and pay with ease.',
   generator: 'v0.app',
+  manifest: "/manifest.json"
 }
 
 export const viewport: Viewport = {
