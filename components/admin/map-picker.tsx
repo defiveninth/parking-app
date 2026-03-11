@@ -120,7 +120,7 @@ export function MapPicker({ lat, lng, onChange }: MapPickerProps) {
   return (
     <div
       ref={mapContainerRef}
-      className="h-[300px] w-full rounded-md border"
+      className="h-[250px] w-full rounded-lg border lg:h-[380px]"
       style={{ zIndex: 0 }}
     />
   )
