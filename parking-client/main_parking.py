@@ -15,7 +15,7 @@ SEND_INTERVAL = 60  # seconds
 # ==============================
 # LOAD MODEL
 # ==============================
-model = YOLO("yolo11l.pt")
+model = YOLO("math-formula.pt")
 
 # ==============================
 # CAMERA
