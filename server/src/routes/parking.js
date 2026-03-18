@@ -51,4 +51,62 @@ router.get("/spots/:id", async (req, res) => {
   }
 });
 
+// POST /parking/spots/:id/update-count
+router.post("/spots/:id/update-count", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { carCount } = req.body;
+
+    // ==============================
+    // VALIDATION
+    // ==============================
+    if (typeof carCount !== "number" || carCount < 0) {
+      return res.status(400).json({ error: "Invalid carCount" });
+    }
+
+    // ==============================
+    // GET TOTAL SPOTS
+    // ==============================
+    const result = await query(
+      "SELECT total_spots FROM parking_spots WHERE id = $1",
+      [id]
+    );
+
+    const row = result.rows[0];
+
+    if (!row) {
+      return res.status(404).json({ error: "Parking spot not found" });
+    }
+
+    const totalSpots = row.total_spots;
+
+    // ==============================
+    // CALCULATE AVAILABLE
+    // ==============================
+    const availableSpots = Math.max(0, totalSpots - carCount);
+
+    // ==============================
+    // UPDATE DB
+    // ==============================
+    await query(
+      "UPDATE parking_spots SET available_spots = $1 WHERE id = $2",
+      [availableSpots, id]
+    );
+
+    // ==============================
+    // RESPONSE
+    // ==============================
+    res.json({
+      success: true,
+      carCount,
+      availableSpots,
+      totalSpots,
+    });
+
+  } catch (err) {
+    console.error("Update parking error:", err);
+    res.status(500).json({ error: "Failed to update parking spot" });
+  }
+});
+
 export default router;
