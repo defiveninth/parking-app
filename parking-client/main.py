@@ -15,7 +15,7 @@ load_dotenv()
 PARKING_ID = os.environ.get("PARKING_ID", "default-parking-id")
 API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:4000")
 
-API_URL = f"{API_BASE_URL}/parking/spots/{PARKING_ID}/update-count"
+API_URL = f"{API_BASE_URL}/api/parking/spots/{PARKING_ID}/update-count"
 
 FIRST_SEND_DELAY = 10   # first send after 10 sec
 SEND_INTERVAL = 60      # then every 60 sec
