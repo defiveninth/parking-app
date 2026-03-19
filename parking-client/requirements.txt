@@ -1,4 +1,6 @@
-numpy==2.4.2
-opencv_python==4.13.0.92
-Shapely==2.1.2
-ultralytics==8.4.12
+ultralytics==8.3.0
+opencv-python==4.9.0.80
+requests==2.31.0
+python-dotenv==1.0.1
+torch>=2.0.0
+torchvision>=0.15.0
