@@ -72,6 +72,11 @@ function createUserIcon(L: LeafletNS) {
   })
 }
 
+export interface RouteInfo {
+  distance: number // in km
+  duration: number // in minutes
+}
+
 export interface AlmatyMapHandle {
   centerOnLocation: (lat: number, lng: number) => void
   drawRoute: (from: { lat: number; lng: number }, to: { lat: number; lng: number }) => void
@@ -85,10 +90,11 @@ interface AlmatyMapProps {
   onMapClick?: () => void
   userLocation?: { lat: number; lng: number } | null
   routeDestination?: { lat: number; lng: number } | null
+  onRouteCalculated?: (routeInfo: RouteInfo | null) => void
 }
 
 export const AlmatyMap = forwardRef<AlmatyMapHandle, AlmatyMapProps>(function AlmatyMap(
-  { spots, selectedSpotId, onSpotClick, onMapClick, userLocation, routeDestination },
+  { spots, selectedSpotId, onSpotClick, onMapClick, userLocation, routeDestination, onRouteCalculated },
   ref
 ) {
   const mapContainerRef = useRef<HTMLDivElement>(null)
@@ -258,8 +264,31 @@ export const AlmatyMap = forwardRef<AlmatyMapHandle, AlmatyMapProps>(function Al
     updateMarkers()
   }, [updateMarkers])
 
+  // Fetch real route from OSRM API
+  const fetchRoute = useCallback(async (from: { lat: number; lng: number }, to: { lat: number; lng: number }) => {
+    try {
+      // OSRM expects coordinates as lng,lat (not lat,lng)
+      const url = `https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`
+      const response = await fetch(url)
+      const data = await response.json()
+      
+      if (data.code === "Ok" && data.routes && data.routes.length > 0) {
+        const route = data.routes[0]
+        return {
+          coordinates: route.geometry.coordinates as [number, number][], // [lng, lat] pairs
+          distance: route.distance / 1000, // Convert meters to km
+          duration: route.duration / 60, // Convert seconds to minutes
+        }
+      }
+      return null
+    } catch (error) {
+      console.error("Failed to fetch route:", error)
+      return null
+    }
+  }, [])
+
   // Draw route when routeDestination changes
-  const drawRouteOnMap = useCallback(() => {
+  const drawRouteOnMap = useCallback(async () => {
     const map = mapRef.current
     const L = LRef.current
     if (!map || !L) return
@@ -272,29 +301,59 @@ export const AlmatyMap = forwardRef<AlmatyMapHandle, AlmatyMapProps>(function Al
 
     // Draw route if we have both user location and destination
     if (userLocation && routeDestination) {
-      const routeLine = L.polyline(
-        [
-          [userLocation.lat, userLocation.lng],
-          [routeDestination.lat, routeDestination.lng],
-        ],
-        {
+      // Fetch real route from OSRM
+      const routeData = await fetchRoute(userLocation, routeDestination)
+      
+      if (routeData) {
+        // OSRM returns [lng, lat], Leaflet needs [lat, lng]
+        const latLngs: [number, number][] = routeData.coordinates.map(
+          ([lng, lat]) => [lat, lng] as [number, number]
+        )
+
+        const routeLine = L.polyline(latLngs, {
           color: "#2F8EDB",
           weight: 5,
           opacity: 0.9,
-          dashArray: "12, 8",
-        }
-      ).addTo(map)
+        }).addTo(map)
 
-      routeLayerRef.current = routeLine
+        routeLayerRef.current = routeLine
 
-      // Fit bounds to show both points with good padding for bottom panel
-      const bounds = L.latLngBounds([
-        [userLocation.lat, userLocation.lng],
-        [routeDestination.lat, routeDestination.lng],
-      ])
-      map.fitBounds(bounds, { padding: [100, 100], maxZoom: 15 })
+        // Fit bounds to show the entire route
+        const bounds = routeLine.getBounds()
+        map.fitBounds(bounds, { padding: [80, 80], maxZoom: 15 })
+
+        // Notify parent of route info
+        onRouteCalculated?.({
+          distance: Math.round(routeData.distance * 10) / 10,
+          duration: Math.ceil(routeData.duration),
+        })
+      } else {
+        // Fallback to straight line if OSRM fails
+        const routeLine = L.polyline(
+          [
+            [userLocation.lat, userLocation.lng],
+            [routeDestination.lat, routeDestination.lng],
+          ],
+          {
+            color: "#2F8EDB",
+            weight: 5,
+            opacity: 0.9,
+            dashArray: "12, 8",
+          }
+        ).addTo(map)
+
+        routeLayerRef.current = routeLine
+
+        const bounds = L.latLngBounds([
+          [userLocation.lat, userLocation.lng],
+          [routeDestination.lat, routeDestination.lng],
+        ])
+        map.fitBounds(bounds, { padding: [80, 80], maxZoom: 15 })
+      }
+    } else {
+      onRouteCalculated?.(null)
     }
-  }, [userLocation, routeDestination])
+  }, [userLocation, routeDestination, fetchRoute, onRouteCalculated])
 
   useEffect(() => {
     // Small delay to ensure map is ready

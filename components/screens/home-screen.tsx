@@ -17,7 +17,7 @@ import {
   Route,
 } from "lucide-react"
 import dynamic from "next/dynamic"
-import type { AlmatyMapHandle } from "@/components/almaty-map"
+import type { AlmatyMapHandle, RouteInfo } from "@/components/almaty-map"
 
 const AlmatyMap = dynamic(() => import("@/components/almaty-map").then(m => m.AlmatyMap), { ssr: false })
 
@@ -32,14 +32,11 @@ export function HomeScreen() {
   const [locationLoading, setLocationLoading] = useState(false)
   const [locationError, setLocationError] = useState<string | null>(null)
   const [nearestParking, setNearestParking] = useState<ParkingSpotDto | null>(null)
-  const [routeInfo, setRouteInfo] = useState<{
-    distance: number // in km
-    duration: number // in minutes
-  } | null>(null)
+  const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null)
   const [findingNearest, setFindingNearest] = useState(false)
   const mapRef = useRef<AlmatyMapHandle>(null)
 
-  // Calculate distance between two points using Haversine formula
+  // Calculate straight-line distance for finding nearest (Haversine formula)
   const calculateDistance = useCallback((lat1: number, lon1: number, lat2: number, lon2: number): number => {
     const R = 6371 // Earth's radius in km
     const dLat = (lat2 - lat1) * Math.PI / 180
@@ -52,6 +49,11 @@ export function HomeScreen() {
     return R * c
   }, [])
 
+  // Handle route info from map component (real road distance/duration)
+  const handleRouteCalculated = useCallback((info: RouteInfo | null) => {
+    setRouteInfo(info)
+  }, [])
+
   // Find nearest parking spot
   const findNearestParking = useCallback(() => {
     if (!userLocation || spots.length === 0) {
@@ -61,7 +63,7 @@ export function HomeScreen() {
 
     setFindingNearest(true)
 
-    // Find the nearest spot with available spaces
+    // Find the nearest spot with available spaces (using straight-line for initial search)
     let nearest: ParkingSpotDto | null = null
     let minDistance = Infinity
 
@@ -82,12 +84,7 @@ export function HomeScreen() {
 
     if (nearest) {
       setNearestParking(nearest)
-      // Estimate duration: average walking speed ~5 km/h, driving ~30 km/h in city
-      const durationMinutes = Math.ceil((minDistance / 30) * 60) // Assuming driving
-      setRouteInfo({
-        distance: Math.round(minDistance * 10) / 10, // Round to 1 decimal
-        duration: Math.max(1, durationMinutes), // At least 1 minute
-      })
+      // Route info will be set by onRouteCalculated callback from map
     } else {
       setLocationError("No available parking spots found")
     }
@@ -191,6 +188,7 @@ export function HomeScreen() {
           onMapClick={() => {}}
           userLocation={userLocation}
           routeDestination={nearestParking ? { lat: nearestParking.lat, lng: nearestParking.lng } : null}
+          onRouteCalculated={handleRouteCalculated}
         />
 
         {/* Search bar */}
