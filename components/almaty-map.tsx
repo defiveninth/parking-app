@@ -79,7 +79,6 @@ export interface RouteInfo {
 
 export interface AlmatyMapHandle {
   centerOnLocation: (lat: number, lng: number) => void
-  drawRoute: (from: { lat: number; lng: number }, to: { lat: number; lng: number }) => void
   clearRoute: () => void
 }
 
@@ -104,68 +103,45 @@ export const AlmatyMap = forwardRef<AlmatyMapHandle, AlmatyMapProps>(function Al
   const routeLayerRef = useRef<import("leaflet").Polyline | null>(null)
   const LRef = useRef<LeafletNS | null>(null)
 
+  // Keep stable refs for callbacks and volatile props so effects never need
+  // them as reactive dependencies.
   const onSpotClickRef = useRef(onSpotClick)
   onSpotClickRef.current = onSpotClick
 
   const onMapClickRef = useRef(onMapClick)
   onMapClickRef.current = onMapClick
 
-  // Expose methods via ref
+  const onRouteCalculatedRef = useRef(onRouteCalculated)
+  onRouteCalculatedRef.current = onRouteCalculated
+
+  const userLocationRef = useRef(userLocation)
+  userLocationRef.current = userLocation
+
+  // Track the last destination we actually fetched a route for so we can
+  // skip duplicate fetches (e.g. parent re-renders without changing destination)
+  const lastRoutedDestinationRef = useRef<{ lat: number; lng: number } | null>(null)
+
+  // ─── Expose imperative API ───────────────────────────────────────────────
   useImperativeHandle(ref, () => ({
     centerOnLocation: (lat: number, lng: number) => {
-      if (mapRef.current) {
-        mapRef.current.setView([lat, lng], 14, { animate: true })
-      }
-    },
-    drawRoute: (from: { lat: number; lng: number }, to: { lat: number; lng: number }) => {
-      const map = mapRef.current
-      const L = LRef.current
-      if (!map || !L) return
-
-      // Clear existing route
-      if (routeLayerRef.current) {
-        routeLayerRef.current.remove()
-        routeLayerRef.current = null
-      }
-
-      // Draw a simple polyline route
-      const routeLine = L.polyline(
-        [
-          [from.lat, from.lng],
-          [to.lat, to.lng],
-        ],
-        {
-          color: "#2F8EDB",
-          weight: 4,
-          opacity: 0.8,
-          dashArray: "10, 10",
-        }
-      ).addTo(map)
-
-      routeLayerRef.current = routeLine
-
-      // Fit bounds to show both points
-      const bounds = L.latLngBounds([
-        [from.lat, from.lng],
-        [to.lat, to.lng],
-      ])
-      map.fitBounds(bounds, { padding: [50, 50] })
+      mapRef.current?.setView([lat, lng], 14, { animate: true })
     },
     clearRoute: () => {
       if (routeLayerRef.current) {
         routeLayerRef.current.remove()
         routeLayerRef.current = null
       }
+      lastRoutedDestinationRef.current = null
+      onRouteCalculatedRef.current?.(null)
     },
   }))
 
-  // Update markers when spots or selection changes
+  // ─── Update parking markers (imperative, no map re-init) ─────────────────
   const updateMarkers = useCallback(() => {
     const map = mapRef.current
     const L = LRef.current
     if (!map || !L) return
 
-    // Remove old markers
     markersRef.current.forEach((m) => m.remove())
     markersRef.current = []
 
@@ -179,24 +155,21 @@ export const AlmatyMap = forwardRef<AlmatyMapHandle, AlmatyMapProps>(function Al
           L.DomEvent.stopPropagation(e)
           onSpotClickRef.current(spot)
         })
-
       markersRef.current.push(marker)
     })
-  }, [spots, selectedSpotId])
+  }, [spots, selectedSpotId]) // safe – does NOT touch routeLayerRef or the map itself
 
-  // Update user location marker
+  // ─── Update user location marker only ────────────────────────────────────
   useEffect(() => {
     const map = mapRef.current
     const L = LRef.current
     if (!map || !L) return
 
-    // Remove old user marker if exists
     if (userMarkerRef.current) {
       userMarkerRef.current.remove()
       userMarkerRef.current = null
     }
 
-    // Add new user marker at user location or fallback to Almaty center
     const position: [number, number] = userLocation
       ? [userLocation.lat, userLocation.lng]
       : ALMATY_CENTER
@@ -205,9 +178,9 @@ export const AlmatyMap = forwardRef<AlmatyMapHandle, AlmatyMapProps>(function Al
       icon: createUserIcon(L),
       interactive: false,
     }).addTo(map)
-  }, [userLocation])
+  }, [userLocation]) // only re-runs when location changes – does NOT affect route
 
-  // Initialize map once (client-only)
+  // ─── Initialize map ONCE ─────────────────────────────────────────────────
   useEffect(() => {
     let isMounted = true
 
@@ -219,9 +192,8 @@ export const AlmatyMap = forwardRef<AlmatyMapHandle, AlmatyMapProps>(function Al
 
       LRef.current = L
 
-      // Use user location as initial center if available
-      const initialCenter: [number, number] = userLocation
-        ? [userLocation.lat, userLocation.lng]
+      const initialCenter: [number, number] = userLocationRef.current
+        ? [userLocationRef.current.lat, userLocationRef.current.lng]
         : ALMATY_CENTER
 
       const map = L.map(mapContainerRef.current, {
@@ -235,7 +207,6 @@ export const AlmatyMap = forwardRef<AlmatyMapHandle, AlmatyMapProps>(function Al
         maxZoom: 19,
       }).addTo(map)
 
-      // User location marker
       userMarkerRef.current = L.marker(initialCenter, {
         icon: createUserIcon(L),
         interactive: false,
@@ -246,6 +217,8 @@ export const AlmatyMap = forwardRef<AlmatyMapHandle, AlmatyMapProps>(function Al
       })
 
       mapRef.current = map
+
+      // Draw initial markers now that map is ready
       updateMarkers()
     })()
 
@@ -257,111 +230,117 @@ export const AlmatyMap = forwardRef<AlmatyMapHandle, AlmatyMapProps>(function Al
       }
       markersRef.current = []
       userMarkerRef.current = null
+      routeLayerRef.current = null
+      lastRoutedDestinationRef.current = null
     }
-  }, [updateMarkers])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // EMPTY – map is created once and never destroyed/recreated
 
+  // ─── Update markers when spots or selection changes ───────────────────────
   useEffect(() => {
     updateMarkers()
   }, [updateMarkers])
 
-  // Fetch real route from OSRM API
-  const fetchRoute = useCallback(async (from: { lat: number; lng: number }, to: { lat: number; lng: number }) => {
-    try {
-      // OSRM expects coordinates as lng,lat (not lat,lng)
-      const url = `https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`
-      const response = await fetch(url)
-      const data = await response.json()
-      
-      if (data.code === "Ok" && data.routes && data.routes.length > 0) {
-        const route = data.routes[0]
-        return {
-          coordinates: route.geometry.coordinates as [number, number][], // [lng, lat] pairs
-          distance: route.distance / 1000, // Convert meters to km
-          duration: route.duration / 60, // Convert seconds to minutes
-        }
+  // ─── Fetch and draw route ONLY when routeDestination identity changes ─────
+  // We compare by value (lat/lng) to avoid re-fetching on parent re-renders
+  // that pass a new object with the same coordinates.
+  // userLocation is intentionally read from a ref here so that GPS updates
+  // never re-trigger this effect.
+  useEffect(() => {
+    // No destination → clear route
+    if (!routeDestination) {
+      if (routeLayerRef.current) {
+        routeLayerRef.current.remove()
+        routeLayerRef.current = null
       }
-      return null
-    } catch (error) {
-      console.error("Failed to fetch route:", error)
-      return null
-    }
-  }, [])
-
-  // Draw route when routeDestination changes
-  const drawRouteOnMap = useCallback(async () => {
-    const map = mapRef.current
-    const L = LRef.current
-    if (!map || !L) return
-
-    // Clear existing route
-    if (routeLayerRef.current) {
-      routeLayerRef.current.remove()
-      routeLayerRef.current = null
+      lastRoutedDestinationRef.current = null
+      onRouteCalculatedRef.current?.(null)
+      return
     }
 
-    // Draw route if we have both user location and destination
-    if (userLocation && routeDestination) {
-      // Fetch real route from OSRM
-      const routeData = await fetchRoute(userLocation, routeDestination)
-      
-      if (routeData) {
-        // OSRM returns [lng, lat], Leaflet needs [lat, lng]
-        const latLngs: [number, number][] = routeData.coordinates.map(
-          ([lng, lat]) => [lat, lng] as [number, number]
-        )
+    // Skip if destination hasn't actually changed (same lat/lng)
+    const prev = lastRoutedDestinationRef.current
+    if (
+      prev &&
+      prev.lat === routeDestination.lat &&
+      prev.lng === routeDestination.lng
+    ) {
+      return
+    }
 
-        const routeLine = L.polyline(latLngs, {
-          color: "#2F8EDB",
-          weight: 5,
-          opacity: 0.9,
-        }).addTo(map)
+    lastRoutedDestinationRef.current = routeDestination
 
-        routeLayerRef.current = routeLine
+    const draw = async () => {
+      const map = mapRef.current
+      const L = LRef.current
+      if (!map || !L) return
 
-        // Fit bounds to show the entire route
-        const bounds = routeLine.getBounds()
-        map.fitBounds(bounds, { padding: [80, 80], maxZoom: 15 })
+      const from = userLocationRef.current
+      if (!from) return
 
-        // Notify parent of route info
-        onRouteCalculated?.({
-          distance: Math.round(routeData.distance * 10) / 10,
-          duration: Math.ceil(routeData.duration),
-        })
-      } else {
-        // Fallback to straight line if OSRM fails
-        const routeLine = L.polyline(
-          [
-            [userLocation.lat, userLocation.lng],
-            [routeDestination.lat, routeDestination.lng],
-          ],
-          {
+      // Clear old route line
+      if (routeLayerRef.current) {
+        routeLayerRef.current.remove()
+        routeLayerRef.current = null
+      }
+
+      try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${routeDestination.lng},${routeDestination.lat}?overview=full&geometries=geojson`
+        const response = await fetch(url)
+        const data = await response.json()
+
+        if (data.code === "Ok" && data.routes?.length > 0) {
+          const route = data.routes[0]
+          const latLngs: [number, number][] = (route.geometry.coordinates as [number, number][]).map(
+            ([lng, lat]) => [lat, lng]
+          )
+
+          const routeLine = L.polyline(latLngs, {
             color: "#2F8EDB",
             weight: 5,
             opacity: 0.9,
-            dashArray: "12, 8",
-          }
-        ).addTo(map)
+          }).addTo(map)
 
-        routeLayerRef.current = routeLine
+          routeLayerRef.current = routeLine
+          map.fitBounds(routeLine.getBounds(), { padding: [80, 80], maxZoom: 15 })
 
-        const bounds = L.latLngBounds([
-          [userLocation.lat, userLocation.lng],
-          [routeDestination.lat, routeDestination.lng],
-        ])
-        map.fitBounds(bounds, { padding: [80, 80], maxZoom: 15 })
+          onRouteCalculatedRef.current?.({
+            distance: Math.round((route.distance / 1000) * 10) / 10,
+            duration: Math.ceil(route.duration / 60),
+          })
+          return
+        }
+      } catch {
+        // fall through to straight-line fallback
       }
-    } else {
-      onRouteCalculated?.(null)
-    }
-  }, [userLocation, routeDestination, fetchRoute, onRouteCalculated])
 
-  useEffect(() => {
-    // Small delay to ensure map is ready
-    const timer = setTimeout(() => {
-      drawRouteOnMap()
-    }, 100)
+      // Fallback: straight dashed line
+      const routeLine = L.polyline(
+        [
+          [from.lat, from.lng],
+          [routeDestination.lat, routeDestination.lng],
+        ],
+        { color: "#2F8EDB", weight: 5, opacity: 0.9, dashArray: "12, 8" }
+      ).addTo(map)
+
+      routeLayerRef.current = routeLine
+      map.fitBounds(
+        L.latLngBounds([
+          [from.lat, from.lng],
+          [routeDestination.lat, routeDestination.lng],
+        ]),
+        { padding: [80, 80], maxZoom: 15 }
+      )
+    }
+
+    // Small delay to ensure Leaflet is fully mounted on first render
+    const timer = setTimeout(draw, 150)
     return () => clearTimeout(timer)
-  }, [drawRouteOnMap])
+
+  // ONLY re-run when routeDestination reference changes (set by button click).
+  // userLocation is read via ref – GPS movement never triggers this effect.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeDestination])
 
   return <div ref={mapContainerRef} className="absolute inset-0 h-full w-full" style={{ zIndex: 0 }} />
 })

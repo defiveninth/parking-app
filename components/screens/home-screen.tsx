@@ -34,6 +34,9 @@ export function HomeScreen() {
   const [nearestParking, setNearestParking] = useState<ParkingSpotDto | null>(null)
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null)
   const [findingNearest, setFindingNearest] = useState(false)
+  // routeDestination is a separate stable ref updated only on button click,
+  // so GPS location changes never cause a new object to be passed to the map.
+  const [routeDestination, setRouteDestination] = useState<{ lat: number; lng: number } | null>(null)
   const mapRef = useRef<AlmatyMapHandle>(null)
 
   // Calculate straight-line distance for finding nearest (Haversine formula)
@@ -84,6 +87,8 @@ export function HomeScreen() {
 
     if (nearest) {
       setNearestParking(nearest)
+      // Set the destination once here – this is the only place it changes
+      setRouteDestination({ lat: nearest.lat, lng: nearest.lng })
       // Route info will be set by onRouteCalculated callback from map
     } else {
       setLocationError("No available parking spots found")
@@ -96,6 +101,7 @@ export function HomeScreen() {
   const clearRoute = useCallback(() => {
     setNearestParking(null)
     setRouteInfo(null)
+    setRouteDestination(null)
     mapRef.current?.clearRoute()
   }, [])
 
@@ -187,7 +193,7 @@ export function HomeScreen() {
           }}
           onMapClick={() => {}}
           userLocation={userLocation}
-          routeDestination={nearestParking ? { lat: nearestParking.lat, lng: nearestParking.lng } : null}
+          routeDestination={routeDestination}
           onRouteCalculated={handleRouteCalculated}
         />
 
