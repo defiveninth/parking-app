@@ -178,23 +178,9 @@ export function HomeScreen() {
           )}
         </div>
 
-        {/* Current location button */}
-        <button
-          onClick={getUserLocation}
-          disabled={locationLoading}
-          className="absolute right-4 bottom-4 z-[999] flex h-12 w-12 items-center justify-center rounded-full bg-card shadow-lg transition-transform active:scale-95 disabled:opacity-70"
-          aria-label="Center on my location"
-        >
-          {locationLoading ? (
-            <Loader2 className="h-5 w-5 text-accent animate-spin" />
-          ) : (
-            <Navigation className={`h-5 w-5 ${userLocation ? "text-accent" : "text-muted-foreground"}`} />
-          )}
-        </button>
-
         {/* Location error toast */}
         {locationError && (
-          <div className="absolute right-4 bottom-20 z-[999] rounded-lg bg-destructive/90 px-3 py-2 text-xs text-destructive-foreground shadow-lg">
+          <div className="absolute right-4 bottom-24 z-999 rounded-lg bg-destructive/90 px-3 py-2 text-xs text-destructive-foreground shadow-lg">
             {locationError}
             <button
               onClick={() => setLocationError(null)}
@@ -207,7 +193,22 @@ export function HomeScreen() {
       </div>
 
       {/* Bottom Nav wrapper */}
-      <div className="absolute right-0 bottom-0 left-0 z-[1000] flex flex-col">
+      <div className="absolute right-0 bottom-0 left-0 z-1000 flex flex-col">
+        {/* Current location button - right bottom corner above nav */}
+        <div className="flex justify-end px-4 pb-4">
+          <button
+            onClick={getUserLocation}
+            disabled={locationLoading}
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-card shadow-lg transition-transform active:scale-95 disabled:opacity-70"
+            aria-label="Center on my location"
+          >
+            {locationLoading ? (
+              <Loader2 className="h-5 w-5 text-accent animate-spin" />
+            ) : (
+              <Navigation className={`h-5 w-5 ${userLocation ? "text-accent" : "text-muted-foreground"}`} />
+            )}
+          </button>
+        </div>
         <div className="flex items-center justify-around border-t border-border bg-card px-2 pb-6 pt-2">
           <NavItem icon={<MapPin className="h-5 w-5" />} label={t("nav.explore")} active onClick={() => {}} />
           <NavItem icon={<Clock className="h-5 w-5" />} label={t("nav.history")} onClick={() => router.push("/history")} />
