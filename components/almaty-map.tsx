@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useCallback } from "react"
+import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from "react"
 import "leaflet/dist/leaflet.css"
 import type { ParkingSpotDto } from "@/lib/api"
 
@@ -72,17 +72,26 @@ function createUserIcon(L: LeafletNS) {
   })
 }
 
+export interface AlmatyMapHandle {
+  centerOnLocation: (lat: number, lng: number) => void
+}
+
 interface AlmatyMapProps {
   spots: ParkingSpotDto[]
   selectedSpotId: string | null
   onSpotClick: (spot: ParkingSpotDto) => void
   onMapClick?: () => void
+  userLocation?: { lat: number; lng: number } | null
 }
 
-export function AlmatyMap({ spots, selectedSpotId, onSpotClick, onMapClick }: AlmatyMapProps) {
+export const AlmatyMap = forwardRef<AlmatyMapHandle, AlmatyMapProps>(function AlmatyMap(
+  { spots, selectedSpotId, onSpotClick, onMapClick, userLocation },
+  ref
+) {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<import("leaflet").Map | null>(null)
   const markersRef = useRef<import("leaflet").Marker[]>([])
+  const userMarkerRef = useRef<import("leaflet").Marker | null>(null)
   const LRef = useRef<LeafletNS | null>(null)
 
   const onSpotClickRef = useRef(onSpotClick)
@@ -90,6 +99,15 @@ export function AlmatyMap({ spots, selectedSpotId, onSpotClick, onMapClick }: Al
 
   const onMapClickRef = useRef(onMapClick)
   onMapClickRef.current = onMapClick
+
+  // Expose centerOnLocation method via ref
+  useImperativeHandle(ref, () => ({
+    centerOnLocation: (lat: number, lng: number) => {
+      if (mapRef.current) {
+        mapRef.current.setView([lat, lng], 16, { animate: true })
+      }
+    },
+  }))
 
   // Update markers when spots or selection changes
   const updateMarkers = useCallback(() => {
@@ -116,6 +134,29 @@ export function AlmatyMap({ spots, selectedSpotId, onSpotClick, onMapClick }: Al
     })
   }, [spots, selectedSpotId])
 
+  // Update user location marker
+  useEffect(() => {
+    const map = mapRef.current
+    const L = LRef.current
+    if (!map || !L) return
+
+    // Remove old user marker if exists
+    if (userMarkerRef.current) {
+      userMarkerRef.current.remove()
+      userMarkerRef.current = null
+    }
+
+    // Add new user marker at user location or fallback to Almaty center
+    const position: [number, number] = userLocation
+      ? [userLocation.lat, userLocation.lng]
+      : ALMATY_CENTER
+
+    userMarkerRef.current = L.marker(position, {
+      icon: createUserIcon(L),
+      interactive: false,
+    }).addTo(map)
+  }, [userLocation])
+
   // Initialize map once (client-only)
   useEffect(() => {
     let isMounted = true
@@ -128,8 +169,13 @@ export function AlmatyMap({ spots, selectedSpotId, onSpotClick, onMapClick }: Al
 
       LRef.current = L
 
+      // Use user location as initial center if available
+      const initialCenter: [number, number] = userLocation
+        ? [userLocation.lat, userLocation.lng]
+        : ALMATY_CENTER
+
       const map = L.map(mapContainerRef.current, {
-        center: ALMATY_CENTER,
+        center: initialCenter,
         zoom: DEFAULT_ZOOM,
         zoomControl: false,
         attributionControl: false,
@@ -140,7 +186,10 @@ export function AlmatyMap({ spots, selectedSpotId, onSpotClick, onMapClick }: Al
       }).addTo(map)
 
       // User location marker
-      L.marker(ALMATY_CENTER, { icon: createUserIcon(L), interactive: false }).addTo(map)
+      userMarkerRef.current = L.marker(initialCenter, {
+        icon: createUserIcon(L),
+        interactive: false,
+      }).addTo(map)
 
       map.on("click", () => {
         onMapClickRef.current?.()
@@ -157,6 +206,7 @@ export function AlmatyMap({ spots, selectedSpotId, onSpotClick, onMapClick }: Al
         mapRef.current = null
       }
       markersRef.current = []
+      userMarkerRef.current = null
     }
   }, [updateMarkers])
 
@@ -165,4 +215,4 @@ export function AlmatyMap({ spots, selectedSpotId, onSpotClick, onMapClick }: Al
   }, [updateMarkers])
 
   return <div ref={mapContainerRef} className="absolute inset-0 h-full w-full" style={{ zIndex: 0 }} />
-}
+})

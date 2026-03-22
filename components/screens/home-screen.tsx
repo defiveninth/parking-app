@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { type ParkingSpotDto, getParkingSpotsApi } from "@/lib/api"
 import { useTranslation } from "@/lib/i18n/language-context"
@@ -12,8 +12,11 @@ import {
   Settings,
   User,
   X,
+  Loader2,
 } from "lucide-react"
 import dynamic from "next/dynamic"
+import type { AlmatyMapHandle } from "@/components/almaty-map"
+
 const AlmatyMap = dynamic(() => import("@/components/almaty-map").then(m => m.AlmatyMap), { ssr: false })
 
 export function HomeScreen() {
@@ -23,6 +26,57 @@ export function HomeScreen() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [searchFocused, setSearchFocused] = useState(false)
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [locationLoading, setLocationLoading] = useState(false)
+  const [locationError, setLocationError] = useState<string | null>(null)
+  const mapRef = useRef<AlmatyMapHandle>(null)
+
+  // Get user's current location
+  const getUserLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser")
+      return
+    }
+
+    setLocationLoading(true)
+    setLocationError(null)
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords
+        setUserLocation({ lat: latitude, lng: longitude })
+        setLocationLoading(false)
+        // Center map on user location
+        mapRef.current?.centerOnLocation(latitude, longitude)
+      },
+      (error) => {
+        setLocationLoading(false)
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            setLocationError("Location permission denied")
+            break
+          case error.POSITION_UNAVAILABLE:
+            setLocationError("Location unavailable")
+            break
+          case error.TIMEOUT:
+            setLocationError("Location request timed out")
+            break
+          default:
+            setLocationError("Unable to get location")
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000,
+      }
+    )
+  }, [])
+
+  // Try to get location on initial load
+  useEffect(() => {
+    getUserLocation()
+  }, [getUserLocation])
 
   const filteredSpots = searchQuery.trim().length > 0
     ? spots.filter(
@@ -57,12 +111,14 @@ export function HomeScreen() {
       {/* Map area */}
       <div className="relative flex-1 bg-muted">
         <AlmatyMap
+          ref={mapRef}
           spots={spots}
           selectedSpotId={null}
           onSpotClick={(spot) => {
             router.push(`/parking/${spot.id}`)
           }}
           onMapClick={() => {}}
+          userLocation={userLocation}
         />
 
         {/* Search bar */}
@@ -124,11 +180,30 @@ export function HomeScreen() {
 
         {/* Current location button */}
         <button
-          className="absolute right-4 bottom-4 z-[999] flex h-12 w-12 items-center justify-center rounded-full bg-card shadow-lg"
+          onClick={getUserLocation}
+          disabled={locationLoading}
+          className="absolute right-4 bottom-4 z-[999] flex h-12 w-12 items-center justify-center rounded-full bg-card shadow-lg transition-transform active:scale-95 disabled:opacity-70"
           aria-label="Center on my location"
         >
-          <Navigation className="h-5 w-5 text-accent" />
+          {locationLoading ? (
+            <Loader2 className="h-5 w-5 text-accent animate-spin" />
+          ) : (
+            <Navigation className={`h-5 w-5 ${userLocation ? "text-accent" : "text-muted-foreground"}`} />
+          )}
         </button>
+
+        {/* Location error toast */}
+        {locationError && (
+          <div className="absolute right-4 bottom-20 z-[999] rounded-lg bg-destructive/90 px-3 py-2 text-xs text-destructive-foreground shadow-lg">
+            {locationError}
+            <button
+              onClick={() => setLocationError(null)}
+              className="ml-2 font-medium underline"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Bottom Nav wrapper */}
