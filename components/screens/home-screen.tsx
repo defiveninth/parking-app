@@ -13,6 +13,8 @@ import {
   User,
   X,
   Loader2,
+  Car,
+  Route,
 } from "lucide-react"
 import dynamic from "next/dynamic"
 import type { AlmatyMapHandle } from "@/components/almaty-map"
@@ -29,7 +31,76 @@ export function HomeScreen() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [locationLoading, setLocationLoading] = useState(false)
   const [locationError, setLocationError] = useState<string | null>(null)
+  const [nearestParking, setNearestParking] = useState<ParkingSpotDto | null>(null)
+  const [routeInfo, setRouteInfo] = useState<{
+    distance: number // in km
+    duration: number // in minutes
+  } | null>(null)
+  const [findingNearest, setFindingNearest] = useState(false)
   const mapRef = useRef<AlmatyMapHandle>(null)
+
+  // Calculate distance between two points using Haversine formula
+  const calculateDistance = useCallback((lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371 // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180
+    const dLon = (lon2 - lon1) * Math.PI / 180
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return R * c
+  }, [])
+
+  // Find nearest parking spot
+  const findNearestParking = useCallback(() => {
+    if (!userLocation || spots.length === 0) {
+      setLocationError("Please enable location to find nearest parking")
+      return
+    }
+
+    setFindingNearest(true)
+
+    // Find the nearest spot with available spaces
+    let nearest: ParkingSpotDto | null = null
+    let minDistance = Infinity
+
+    spots.forEach((spot) => {
+      if (spot.availableSpots > 0) {
+        const distance = calculateDistance(
+          userLocation.lat,
+          userLocation.lng,
+          spot.lat,
+          spot.lng
+        )
+        if (distance < minDistance) {
+          minDistance = distance
+          nearest = spot
+        }
+      }
+    })
+
+    if (nearest) {
+      setNearestParking(nearest)
+      // Estimate duration: average walking speed ~5 km/h, driving ~30 km/h in city
+      const durationMinutes = Math.ceil((minDistance / 30) * 60) // Assuming driving
+      setRouteInfo({
+        distance: Math.round(minDistance * 10) / 10, // Round to 1 decimal
+        duration: Math.max(1, durationMinutes), // At least 1 minute
+      })
+    } else {
+      setLocationError("No available parking spots found")
+    }
+
+    setFindingNearest(false)
+  }, [userLocation, spots, calculateDistance])
+
+  // Clear route and nearest parking
+  const clearRoute = useCallback(() => {
+    setNearestParking(null)
+    setRouteInfo(null)
+    mapRef.current?.clearRoute()
+  }, [])
 
   // Get user's current location
   const getUserLocation = useCallback(() => {
@@ -113,12 +184,13 @@ export function HomeScreen() {
         <AlmatyMap
           ref={mapRef}
           spots={spots}
-          selectedSpotId={null}
+          selectedSpotId={nearestParking?.id || null}
           onSpotClick={(spot) => {
             router.push(`/parking/${spot.id}`)
           }}
           onMapClick={() => {}}
           userLocation={userLocation}
+          routeDestination={nearestParking ? { lat: nearestParking.lat, lng: nearestParking.lng } : null}
         />
 
         {/* Search bar */}
@@ -193,9 +265,24 @@ export function HomeScreen() {
       </div>
 
       {/* Bottom Nav wrapper */}
-      <div className="absolute right-0 bottom-0 left-0 z-1000 flex flex-col">
-        {/* Current location button - right bottom corner above nav */}
-        <div className="flex justify-end px-4 pb-4">
+      <div className="absolute right-0 bottom-0 left-0 z-[1000] flex flex-col">
+        {/* Action buttons - right bottom corner above nav */}
+        <div className="flex flex-col items-end gap-3 px-4 pb-4">
+          {/* Find Nearest Parking button */}
+          <button
+            onClick={findNearestParking}
+            disabled={findingNearest || !userLocation}
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-lg transition-transform active:scale-95 disabled:opacity-70"
+            aria-label="Find nearest parking"
+          >
+            {findingNearest ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Car className="h-5 w-5" />
+            )}
+          </button>
+
+          {/* Go to me button */}
           <button
             onClick={getUserLocation}
             disabled={locationLoading}
@@ -209,6 +296,76 @@ export function HomeScreen() {
             )}
           </button>
         </div>
+
+        {/* Route info panel */}
+        {nearestParking && routeInfo && (
+          <div className="mx-4 mb-3 rounded-2xl bg-card p-4 shadow-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                {/* Time */}
+                <div className="flex flex-col items-center">
+                  <div className="flex items-center gap-1 text-lg font-semibold text-foreground">
+                    <Clock className="h-4 w-4 text-accent" />
+                    <span>{routeInfo.duration}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">min</span>
+                </div>
+
+                <div className="h-8 w-px bg-border" />
+
+                {/* Distance */}
+                <div className="flex flex-col items-center">
+                  <div className="flex items-center gap-1 text-lg font-semibold text-foreground">
+                    <Route className="h-4 w-4 text-accent" />
+                    <span>{routeInfo.distance}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">km</span>
+                </div>
+
+                <div className="h-8 w-px bg-border" />
+
+                {/* Price */}
+                <div className="flex flex-col items-center">
+                  <div className="text-lg font-semibold text-foreground">
+                    {nearestParking.pricePerHour} T
+                  </div>
+                  <span className="text-xs text-muted-foreground">/hour</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Close button */}
+                <button
+                  onClick={clearRoute}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:bg-secondary/80"
+                  aria-label="Close route"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+
+                {/* Go button */}
+                <button
+                  onClick={() => router.push(`/parking/${nearestParking.id}`)}
+                  className="flex h-10 items-center gap-2 rounded-full bg-accent px-5 text-sm font-semibold text-accent-foreground transition-transform active:scale-95"
+                >
+                  <span>Go</span>
+                  <Navigation className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Parking name */}
+            <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
+              <MapPin className="h-4 w-4 text-accent" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-foreground">{nearestParking.name}</p>
+                <p className="truncate text-xs text-muted-foreground">{nearestParking.address}</p>
+              </div>
+              <span className="shrink-0 text-xs text-accent">{nearestParking.availableSpots} spots</span>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-around border-t border-border bg-card px-2 pb-6 pt-2">
           <NavItem icon={<MapPin className="h-5 w-5" />} label={t("nav.explore")} active onClick={() => {}} />
           <NavItem icon={<Clock className="h-5 w-5" />} label={t("nav.history")} onClick={() => router.push("/history")} />

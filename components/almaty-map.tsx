@@ -74,6 +74,8 @@ function createUserIcon(L: LeafletNS) {
 
 export interface AlmatyMapHandle {
   centerOnLocation: (lat: number, lng: number) => void
+  drawRoute: (from: { lat: number; lng: number }, to: { lat: number; lng: number }) => void
+  clearRoute: () => void
 }
 
 interface AlmatyMapProps {
@@ -82,16 +84,18 @@ interface AlmatyMapProps {
   onSpotClick: (spot: ParkingSpotDto) => void
   onMapClick?: () => void
   userLocation?: { lat: number; lng: number } | null
+  routeDestination?: { lat: number; lng: number } | null
 }
 
 export const AlmatyMap = forwardRef<AlmatyMapHandle, AlmatyMapProps>(function AlmatyMap(
-  { spots, selectedSpotId, onSpotClick, onMapClick, userLocation },
+  { spots, selectedSpotId, onSpotClick, onMapClick, userLocation, routeDestination },
   ref
 ) {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<import("leaflet").Map | null>(null)
   const markersRef = useRef<import("leaflet").Marker[]>([])
   const userMarkerRef = useRef<import("leaflet").Marker | null>(null)
+  const routeLayerRef = useRef<import("leaflet").Polyline | null>(null)
   const LRef = useRef<LeafletNS | null>(null)
 
   const onSpotClickRef = useRef(onSpotClick)
@@ -100,11 +104,51 @@ export const AlmatyMap = forwardRef<AlmatyMapHandle, AlmatyMapProps>(function Al
   const onMapClickRef = useRef(onMapClick)
   onMapClickRef.current = onMapClick
 
-  // Expose centerOnLocation method via ref
+  // Expose methods via ref
   useImperativeHandle(ref, () => ({
     centerOnLocation: (lat: number, lng: number) => {
       if (mapRef.current) {
-        mapRef.current.setView([lat, lng], 16, { animate: true })
+        mapRef.current.setView([lat, lng], 14, { animate: true })
+      }
+    },
+    drawRoute: (from: { lat: number; lng: number }, to: { lat: number; lng: number }) => {
+      const map = mapRef.current
+      const L = LRef.current
+      if (!map || !L) return
+
+      // Clear existing route
+      if (routeLayerRef.current) {
+        routeLayerRef.current.remove()
+        routeLayerRef.current = null
+      }
+
+      // Draw a simple polyline route
+      const routeLine = L.polyline(
+        [
+          [from.lat, from.lng],
+          [to.lat, to.lng],
+        ],
+        {
+          color: "#2F8EDB",
+          weight: 4,
+          opacity: 0.8,
+          dashArray: "10, 10",
+        }
+      ).addTo(map)
+
+      routeLayerRef.current = routeLine
+
+      // Fit bounds to show both points
+      const bounds = L.latLngBounds([
+        [from.lat, from.lng],
+        [to.lat, to.lng],
+      ])
+      map.fitBounds(bounds, { padding: [50, 50] })
+    },
+    clearRoute: () => {
+      if (routeLayerRef.current) {
+        routeLayerRef.current.remove()
+        routeLayerRef.current = null
       }
     },
   }))
@@ -213,6 +257,52 @@ export const AlmatyMap = forwardRef<AlmatyMapHandle, AlmatyMapProps>(function Al
   useEffect(() => {
     updateMarkers()
   }, [updateMarkers])
+
+  // Draw route when routeDestination changes
+  const drawRouteOnMap = useCallback(() => {
+    const map = mapRef.current
+    const L = LRef.current
+    if (!map || !L) return
+
+    // Clear existing route
+    if (routeLayerRef.current) {
+      routeLayerRef.current.remove()
+      routeLayerRef.current = null
+    }
+
+    // Draw route if we have both user location and destination
+    if (userLocation && routeDestination) {
+      const routeLine = L.polyline(
+        [
+          [userLocation.lat, userLocation.lng],
+          [routeDestination.lat, routeDestination.lng],
+        ],
+        {
+          color: "#2F8EDB",
+          weight: 5,
+          opacity: 0.9,
+          dashArray: "12, 8",
+        }
+      ).addTo(map)
+
+      routeLayerRef.current = routeLine
+
+      // Fit bounds to show both points with good padding for bottom panel
+      const bounds = L.latLngBounds([
+        [userLocation.lat, userLocation.lng],
+        [routeDestination.lat, routeDestination.lng],
+      ])
+      map.fitBounds(bounds, { padding: [100, 100], maxZoom: 15 })
+    }
+  }, [userLocation, routeDestination])
+
+  useEffect(() => {
+    // Small delay to ensure map is ready
+    const timer = setTimeout(() => {
+      drawRouteOnMap()
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [drawRouteOnMap])
 
   return <div ref={mapContainerRef} className="absolute inset-0 h-full w-full" style={{ zIndex: 0 }} />
 })
