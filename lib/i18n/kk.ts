@@ -72,6 +72,8 @@ export const kk: Record<TranslationKey, string> = {
   "carpark.negativeBalanceTitle": "Қаражат жеткіліксіз",
   "carpark.negativeBalanceDesc": "Сізде теріс баланс бар. Жалғастыру үшін шотыңызды толтырыңыз.",
   "carpark.topUpNow": "Қазір толтыру",
+  "carpark.noSpotsTitle": "Бос орын жоқ",
+  "carpark.noSpotsDesc": "Бұл тұрақ қазір толы. Басқа тұрақты таңдаңыз.",
 
   // Booking Payment
   "bookingPayment.title": "Орын броньдау",
@@ -120,7 +122,16 @@ export const kk: Record<TranslationKey, string> = {
   "history.activeSession": "Белсенді сеанс",
   "history.reserved": "Брондалған",
   "history.completed": "Аяқталған",
+  "history.expired": "Мерзімі өтті",
   "history.goHome": "Басты бетке оралу",
+  "history.openBarrier": "Шлагбаумды ашу",
+  "history.openingBarrier": "Ашылуда...",
+  "history.remaining": "қалды",
+  "history.expiredSection": "Мерзімі өткен броньдаулар",
+  "history.barrierOpened": "Шлагбаум ашылды! Кіруге болады.",
+  "history.enterNow": "Қазір кіру",
+  "history.bookLater": "Броньдау",
+  "history.expiresIn": "Мерзімі өтеді",
 
   // Payment Method
   "payment.title": "Төлем әдісі",
@@ -148,7 +159,7 @@ export const kk: Record<TranslationKey, string> = {
   "profile.save": "Сақтау",
   "profile.balance": "Баланс",
   "profile.topUp": "Толтыру",
-  "profile.topUpTitle": "Балансты толтыру",
+  "profile.topUpTitle": "Б��лансты толтыру",
   "profile.topUpAmount": "Сома (KZT)",
   "profile.topUpConfirm": "Толтыруды растау",
   "profile.topUpSuccess": "Баланс сәтті толтырылды",

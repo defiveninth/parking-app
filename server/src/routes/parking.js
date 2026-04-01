@@ -81,9 +81,23 @@ router.post("/spots/:id/update-count", async (req, res) => {
     const totalSpots = row.total_spots;
 
     // ==============================
-    // CALCULATE AVAILABLE
+    // COUNT ACTIVE RESERVATIONS (not yet entered, not expired)
     // ==============================
-    const availableSpots = Math.max(0, totalSpots - carCount);
+    const now = new Date().toISOString();
+    const reservedResult = await query(
+      `SELECT COUNT(*) as reserved_count FROM bookings 
+       WHERE parking_spot_id = $1 
+       AND status = 'reserved' 
+       AND (expires_at IS NULL OR expires_at > $2)`,
+      [id, now]
+    );
+    const reservedCount = parseInt(reservedResult.rows[0]?.reserved_count || 0, 10);
+
+    // ==============================
+    // CALCULATE AVAILABLE
+    // Formula: total - cars detected by AI - active reservations
+    // ==============================
+    const availableSpots = Math.max(0, totalSpots - carCount - reservedCount);
 
     // ==============================
     // UPDATE DB
@@ -99,6 +113,7 @@ router.post("/spots/:id/update-count", async (req, res) => {
     res.json({
       success: true,
       carCount,
+      reservedCount,
       availableSpots,
       totalSpots,
     });

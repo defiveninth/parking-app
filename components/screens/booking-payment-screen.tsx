@@ -77,6 +77,7 @@ export function BookingPaymentScreen() {
         date: "Today",
         startTime: isReservation ? "Later" : "Now",
         endTime: "—",
+        bookingType: isReservation ? "book_later" : "enter_now",
       })
       router.push(`/booking/confirmation?spotId=${spot.id}&price=${total}&duration=${duration[0]}&bookingId=${booking.id}&type=${bookingType}`)
     } catch (err: any) {

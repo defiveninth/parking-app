@@ -70,6 +70,8 @@ export const en = {
   "carpark.negativeBalanceTitle": "Insufficient Balance",
   "carpark.negativeBalanceDesc": "Your balance is negative. Please top up your account to continue.",
   "carpark.topUpNow": "Top Up Now",
+  "carpark.noSpotsTitle": "No Spots Available",
+  "carpark.noSpotsDesc": "This parking location is currently full. Please try another parking spot.",
 
   // Booking Payment
   "bookingPayment.title": "Book Space",
@@ -118,7 +120,16 @@ export const en = {
   "history.activeSession": "Active Session",
   "history.reserved": "Reserved",
   "history.completed": "Completed",
+  "history.expired": "Expired",
   "history.goHome": "Go Back to Home Screen",
+  "history.openBarrier": "Open Barrier",
+  "history.openingBarrier": "Opening...",
+  "history.remaining": "remaining",
+  "history.expiredSection": "Expired Reservations",
+  "history.barrierOpened": "Barrier opened! You may enter.",
+  "history.enterNow": "Enter Now",
+  "history.bookLater": "Book for Later",
+  "history.expiresIn": "Expires in",
 
   // Payment Method
   "payment.title": "Payment Method",

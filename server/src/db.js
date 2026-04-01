@@ -35,7 +35,25 @@ try {
     console.log("Migration: Added balance column to users table");
   }
 } catch (err) {
-  console.log("Migration check:", err.message);
+  console.log("Migration check (balance):", err.message);
+}
+
+// Migration 003: booking_type and expires_at columns on bookings
+try {
+  const bookingsCols = db.prepare("PRAGMA table_info(bookings)").all();
+  const hasBookingType = bookingsCols.some(col => col.name === "booking_type");
+  const hasExpiresAt = bookingsCols.some(col => col.name === "expires_at");
+  if (!hasBookingType) {
+    db.exec("ALTER TABLE bookings ADD COLUMN booking_type TEXT DEFAULT 'enter_now'");
+    console.log("Migration 003: Added booking_type column to bookings table");
+  }
+  if (!hasExpiresAt) {
+    db.exec("ALTER TABLE bookings ADD COLUMN expires_at TEXT");
+    db.exec("CREATE INDEX IF NOT EXISTS idx_bookings_expires_at ON bookings(expires_at)");
+    console.log("Migration 003: Added expires_at column to bookings table");
+  }
+} catch (err) {
+  console.log("Migration check (booking_type/expires_at):", err.message);
 }
 
 // Seed parking spots if table is empty

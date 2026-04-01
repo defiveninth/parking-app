@@ -72,6 +72,8 @@ export const ru: Record<TranslationKey, string> = {
   "carpark.negativeBalanceTitle": "Недостаточно средств",
   "carpark.negativeBalanceDesc": "У вас отрицательный баланс. Пожалуйста, пополните счёт для продолжения.",
   "carpark.topUpNow": "Пополнить сейчас",
+  "carpark.noSpotsTitle": "Нет свободных мест",
+  "carpark.noSpotsDesc": "Эта парковка сейчас заполнена. Пожалуйста, попробуйте другую парковку.",
 
   // Booking Payment
   "bookingPayment.title": "Бронирование",
@@ -120,7 +122,16 @@ export const ru: Record<TranslationKey, string> = {
   "history.activeSession": "Активная сессия",
   "history.reserved": "Забронировано",
   "history.completed": "Завершено",
+  "history.expired": "Истекло",
   "history.goHome": "Вернуться на главную",
+  "history.openBarrier": "Открыть шлагбаум",
+  "history.openingBarrier": "Открытие...",
+  "history.remaining": "осталось",
+  "history.expiredSection": "Истёкшие бронирования",
+  "history.barrierOpened": "Шлагбаум открыт! Можно въезжать.",
+  "history.enterNow": "Въехать сейчас",
+  "history.bookLater": "Забронировать",
+  "history.expiresIn": "Истекает через",
 
   // Payment Method
   "payment.title": "Способ оплаты",

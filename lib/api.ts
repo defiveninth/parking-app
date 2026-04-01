@@ -73,10 +73,12 @@ export interface BookingPayload {
   duration?: string
   durationMinutes?: number
   price: number
+  bookingType?: "enter_now" | "book_later"
 }
 
 export interface BookingDto {
   id: number | string
+  parkingSpotId?: number
   parkingName: string
   address: string
   date: string
@@ -86,6 +88,8 @@ export interface BookingDto {
   price: number
   status: "active" | "completed" | "reserved"
   qrCode: string
+  bookingType?: "enter_now" | "book_later"
+  expiresAt?: string
 }
 
 export async function createBookingApi(token: string, payload: BookingPayload) {
@@ -180,6 +184,19 @@ export async function updateBookingStatusApi(
 export async function getBookingApi(token: string, bookingId: string | number) {
   return request<BookingDto>(`/bookings/${bookingId}`, {
     method: "GET",
+    authToken: token,
+  })
+}
+
+export interface OpenBarrierResponse {
+  success: boolean
+  message?: string
+  error?: string
+}
+
+export async function openBarrierApi(token: string, bookingId: string | number) {
+  return request<OpenBarrierResponse>(`/bookings/${bookingId}/open-barrier`, {
+    method: "POST",
     authToken: token,
   })
 }

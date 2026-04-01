@@ -40,6 +40,7 @@ export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
   const [coveredParking, setCoveredParking] = useState(false)
   const [evCharging, setEvCharging] = useState(false)
   const [showNegativeBalanceAlert, setShowNegativeBalanceAlert] = useState(false)
+  const [showNoSpotsAlert, setShowNoSpotsAlert] = useState(false)
 
   const RESERVATION_FEE = 500
 
@@ -92,6 +93,7 @@ export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
 
   const userBalance = userProfile?.balance ?? 0
   const hasNegativeBalance = userBalance < 0
+  const hasNoAvailableSpots = spot.availableSpots <= 0
 
   function handleEnterNow() {
     if (!token) {
@@ -100,6 +102,10 @@ export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
     }
     if (hasNegativeBalance) {
       setShowNegativeBalanceAlert(true)
+      return
+    }
+    if (hasNoAvailableSpots) {
+      setShowNoSpotsAlert(true)
       return
     }
     router.push(`/booking/payment?spotId=${spot.id}&hours=${hours}&minutes=${minutes}&type=enter`)
@@ -112,6 +118,10 @@ export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
     }
     if (hasNegativeBalance) {
       setShowNegativeBalanceAlert(true)
+      return
+    }
+    if (hasNoAvailableSpots) {
+      setShowNoSpotsAlert(true)
       return
     }
     router.push(`/booking/payment?spotId=${spot.id}&hours=${hours}&minutes=${minutes}&type=reserve`)
@@ -277,6 +287,29 @@ export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
               onClick={() => router.push("/profile")}
             >
               {t("carpark.topUpNow")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* No Spots Available Alert */}
+      <AlertDialog open={showNoSpotsAlert} onOpenChange={setShowNoSpotsAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+              <Car className="h-8 w-8 text-destructive" />
+            </div>
+            <AlertDialogTitle className="text-center">{t("carpark.noSpotsTitle")}</AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
+              {t("carpark.noSpotsDesc")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+            <AlertDialogAction
+              className="w-full rounded-xl bg-foreground text-background hover:bg-foreground/90"
+              onClick={() => setShowNoSpotsAlert(false)}
+            >
+              {t("common.goBack")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
