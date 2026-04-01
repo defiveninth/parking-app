@@ -15,9 +15,9 @@ router.post("/register", async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10);
     const avatar = (name || "U").trim().split(/\s+/).map((s) => s[0]).join("").toUpperCase().slice(0, 2) || "U";
     const result = await query(
-      `INSERT INTO users (email, password_hash, name, phone, car_number, avatar)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, email, name, phone, car_number, avatar`,
+      `INSERT INTO users (email, password_hash, name, phone, car_number, avatar, balance)
+       VALUES ($1, $2, $3, $4, $5, $6, 0)
+       RETURNING id, email, name, phone, car_number, avatar, balance`,
       [email, passwordHash, name, phone || null, carNumber || null, avatar]
     );
     const user = result.rows[0];
@@ -30,6 +30,7 @@ router.post("/register", async (req, res) => {
         phone: user.phone,
         carNumber: user.car_number,
         avatar: user.avatar,
+        balance: user.balance || 0,
       },
       token,
     });
@@ -50,7 +51,7 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Email and password are required" });
     }
     const result = await query(
-      "SELECT id, email, password_hash, name, phone, car_number, avatar FROM users WHERE email = $1",
+      "SELECT id, email, password_hash, name, phone, car_number, avatar, balance FROM users WHERE email = $1",
       [email]
     );
     const user = result.rows[0];
@@ -66,6 +67,7 @@ router.post("/login", async (req, res) => {
         phone: user.phone,
         carNumber: user.car_number,
         avatar: user.avatar,
+        balance: user.balance || 0,
       },
       token,
     });

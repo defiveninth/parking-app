@@ -23,12 +23,16 @@ export function BookingPaymentScreen() {
 
   const spotId = searchParams.get("spotId") || ""
   const initialHours = Number(searchParams.get("hours")) || 2
+  const bookingType = searchParams.get("type") || "enter" // "enter" or "reserve"
 
   const [spot, setSpot] = useState<ParkingSpotDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [duration, setDuration] = useState([initialHours])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const RESERVATION_FEE = 500
+  const isReservation = bookingType === "reserve"
 
   useEffect(() => {
     if (!spotId) return
@@ -49,7 +53,10 @@ export function BookingPaymentScreen() {
     )
   }
 
-  const price = duration[0] * spot.pricePerHour
+  // For reservations, price is fixed at RESERVATION_FEE
+  // For "enter now", price will be calculated by time spent (but we show estimated based on duration selected)
+  const estimatedPrice = duration[0] * spot.pricePerHour
+  const price = isReservation ? RESERVATION_FEE : estimatedPrice
 
   async function handleBook() {
     if (!token) {
@@ -60,17 +67,18 @@ export function BookingPaymentScreen() {
     setError(null)
     setSubmitting(true)
     try {
-      const total = price + 100
+      const serviceFee = 100
+      const total = price + serviceFee
       const booking = await createBookingApi(token, {
         parkingSpotId: Number(spot.id),
         price: total,
-        duration: `${duration[0]}h 00m`,
-        durationMinutes: duration[0] * 60,
+        duration: isReservation ? "Reserved" : `${duration[0]}h 00m`,
+        durationMinutes: isReservation ? 0 : duration[0] * 60,
         date: "Today",
-        startTime: "—",
+        startTime: isReservation ? "Later" : "Now",
         endTime: "—",
       })
-      router.push(`/booking/confirmation?spotId=${spot.id}&price=${total}&duration=${duration[0]}&bookingId=${booking.id}`)
+      router.push(`/booking/confirmation?spotId=${spot.id}&price=${total}&duration=${duration[0]}&bookingId=${booking.id}&type=${bookingType}`)
     } catch (err: any) {
       setError(err?.message || "Failed to create booking")
     } finally {
@@ -137,12 +145,19 @@ export function BookingPaymentScreen() {
           <h3 className="mb-3 text-sm font-semibold text-foreground">{t("bookingPayment.priceSummary")}</h3>
           <div className="rounded-2xl bg-card p-5 shadow-sm">
             <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">{t("bookingPayment.parkingFee")}</span>
-                <span className="text-sm font-medium text-foreground">
-                  {spot.pricePerHour} KZT x {duration[0]}h
-                </span>
-              </div>
+              {isReservation ? (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">{t("carpark.reservationFee")}</span>
+                  <span className="text-sm font-medium text-foreground">{RESERVATION_FEE} KZT</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">{t("bookingPayment.parkingFee")}</span>
+                  <span className="text-sm font-medium text-foreground">
+                    {spot.pricePerHour} KZT x {duration[0]}h
+                  </span>
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">{t("bookingPayment.serviceFee")}</span>
                 <span className="text-sm font-medium text-foreground">100 KZT</span>

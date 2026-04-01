@@ -68,6 +68,10 @@ export const kk: Record<TranslationKey, string> = {
   "carpark.estimatedTotal": "Болжалды сома",
   "carpark.enterNow": "Қазір кіру",
   "carpark.reserveAnother": "Басқа уақытқа броньдау",
+  "carpark.reservationFee": "Броньдау құны",
+  "carpark.negativeBalanceTitle": "Қаражат жеткіліксіз",
+  "carpark.negativeBalanceDesc": "Сізде теріс баланс бар. Жалғастыру үшін шотыңызды толтырыңыз.",
+  "carpark.topUpNow": "Қазір толтыру",
 
   // Booking Payment
   "bookingPayment.title": "Орын броньдау",
@@ -142,6 +146,13 @@ export const kk: Record<TranslationKey, string> = {
   "profile.carNumber": "Көлік нөмірі",
   "profile.saving": "Сақталуда...",
   "profile.save": "Сақтау",
+  "profile.balance": "Баланс",
+  "profile.topUp": "Толтыру",
+  "profile.topUpTitle": "Балансты толтыру",
+  "profile.topUpAmount": "Сома (KZT)",
+  "profile.topUpConfirm": "Толтыруды растау",
+  "profile.topUpSuccess": "Баланс сәтті толтырылды",
+  "profile.negativeBalance": "Сізде теріс баланс бар. Жалғастыру үшін толтырыңыз.",
 
   // Settings
   "settings.title": "Параметрлер",

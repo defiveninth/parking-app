@@ -68,6 +68,10 @@ export const ru: Record<TranslationKey, string> = {
   "carpark.estimatedTotal": "Ориентировочная сумма",
   "carpark.enterNow": "Въехать сейчас",
   "carpark.reserveAnother": "Забронировать на другое время",
+  "carpark.reservationFee": "Стоимость бронирования",
+  "carpark.negativeBalanceTitle": "Недостаточно средств",
+  "carpark.negativeBalanceDesc": "У вас отрицательный баланс. Пожалуйста, пополните счёт для продолжения.",
+  "carpark.topUpNow": "Пополнить сейчас",
 
   // Booking Payment
   "bookingPayment.title": "Бронирование",
@@ -142,6 +146,13 @@ export const ru: Record<TranslationKey, string> = {
   "profile.carNumber": "Номер автомобиля",
   "profile.saving": "Сохранение...",
   "profile.save": "Сохранить",
+  "profile.balance": "Баланс",
+  "profile.topUp": "Пополнить",
+  "profile.topUpTitle": "Пополнение баланса",
+  "profile.topUpAmount": "Сумма (KZT)",
+  "profile.topUpConfirm": "Подтвердить пополнение",
+  "profile.topUpSuccess": "Баланс успешно пополнен",
+  "profile.negativeBalance": "У вас отрицательный баланс. Пожалуйста, пополните для продолжения.",
 
   // Settings
   "settings.title": "Настройки",

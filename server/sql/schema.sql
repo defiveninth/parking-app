@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
   phone TEXT,
   car_number TEXT,
   avatar TEXT,
+  balance INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );

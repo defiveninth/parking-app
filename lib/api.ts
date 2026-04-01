@@ -37,6 +37,7 @@ export interface AuthUser {
   phone: string | null
   carNumber: string | null
   avatar: string | null
+  balance: number
 }
 
 export interface AuthResponse {
@@ -135,6 +136,7 @@ export interface UserProfileDto {
   phone: string | null
   carNumber: string | null
   avatar: string | null
+  balance: number
 }
 
 export async function getUserProfileApi(token: string) {
@@ -151,6 +153,14 @@ export async function updateUserProfileApi(
   return request<UserProfileDto>("/users/me", {
     method: "PATCH",
     body: JSON.stringify(payload),
+    authToken: token,
+  })
+}
+
+export async function topUpBalanceApi(token: string, amount: number) {
+  return request<UserProfileDto>("/users/me/topup", {
+    method: "POST",
+    body: JSON.stringify({ amount }),
     authToken: token,
   })
 }

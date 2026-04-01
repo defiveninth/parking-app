@@ -8,7 +8,7 @@ const router = Router();
 router.get("/me", requireAuth, async (req, res) => {
   try {
     const result = await query(
-      "SELECT id, email, name, phone, car_number, avatar FROM users WHERE id = $1",
+      "SELECT id, email, name, phone, car_number, avatar, balance FROM users WHERE id = $1",
       [req.user.userId]
     );
     const row = result.rows[0];
@@ -21,6 +21,7 @@ router.get("/me", requireAuth, async (req, res) => {
       phone: row.phone,
       carNumber: row.car_number,
       avatar: row.avatar,
+      balance: row.balance || 0,
     });
   } catch (err) {
     console.error("Get profile error:", err);
@@ -41,7 +42,7 @@ router.patch("/me", requireAuth, async (req, res) => {
         avatar = COALESCE($5, avatar),
         updated_at = datetime('now')
        WHERE id = $6
-       RETURNING id, email, name, phone, car_number, avatar`,
+       RETURNING id, email, name, phone, car_number, avatar, balance`,
       [name, email, phone, carNumber, avatar, req.user.userId]
     );
     const row = result.rows[0];
@@ -54,6 +55,7 @@ router.patch("/me", requireAuth, async (req, res) => {
       phone: row.phone,
       carNumber: row.car_number,
       avatar: row.avatar,
+      balance: row.balance || 0,
     });
   } catch (err) {
     if (err.code === "23505" || err.code === "SQLITE_CONSTRAINT_UNIQUE") {
@@ -61,6 +63,39 @@ router.patch("/me", requireAuth, async (req, res) => {
     }
     console.error("Update profile error:", err);
     res.status(500).json({ error: "Failed to update profile" });
+  }
+});
+
+// POST /users/me/topup - top up balance
+router.post("/me/topup", requireAuth, async (req, res) => {
+  try {
+    const { amount } = req.body;
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: "Invalid amount" });
+    }
+    const result = await query(
+      `UPDATE users SET
+        balance = balance + $1,
+        updated_at = datetime('now')
+       WHERE id = $2
+       RETURNING id, email, name, phone, car_number, avatar, balance`,
+      [amount, req.user.userId]
+    );
+    const row = result.rows[0];
+    if (!row) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.json({
+      name: row.name,
+      email: row.email,
+      phone: row.phone,
+      carNumber: row.car_number,
+      avatar: row.avatar,
+      balance: row.balance || 0,
+    });
+  } catch (err) {
+    console.error("Top up error:", err);
+    res.status(500).json({ error: "Failed to top up balance" });
   }
 });
 

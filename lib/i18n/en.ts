@@ -66,6 +66,10 @@ export const en = {
   "carpark.estimatedTotal": "Estimated Total",
   "carpark.enterNow": "Enter Now",
   "carpark.reserveAnother": "Reserve for Another Time",
+  "carpark.reservationFee": "Reservation Fee",
+  "carpark.negativeBalanceTitle": "Insufficient Balance",
+  "carpark.negativeBalanceDesc": "Your balance is negative. Please top up your account to continue.",
+  "carpark.topUpNow": "Top Up Now",
 
   // Booking Payment
   "bookingPayment.title": "Book Space",
@@ -140,6 +144,13 @@ export const en = {
   "profile.carNumber": "Car Number",
   "profile.saving": "Saving...",
   "profile.save": "Save",
+  "profile.balance": "Balance",
+  "profile.topUp": "Top Up",
+  "profile.topUpTitle": "Top Up Balance",
+  "profile.topUpAmount": "Amount (KZT)",
+  "profile.topUpConfirm": "Confirm Top Up",
+  "profile.topUpSuccess": "Balance topped up successfully",
+  "profile.negativeBalance": "You have a negative balance. Please top up to continue.",
 
   // Settings
   "settings.title": "Settings",

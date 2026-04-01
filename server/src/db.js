@@ -25,6 +25,19 @@ const schemaPath = join(serverRoot, "sql", "schema.sql");
 const schema = readFileSync(schemaPath, "utf8");
 db.exec(schema);
 
+// Run migrations
+try {
+  // Check if balance column exists, if not add it
+  const tableInfo = db.prepare("PRAGMA table_info(users)").all();
+  const hasBalance = tableInfo.some(col => col.name === "balance");
+  if (!hasBalance) {
+    db.exec("ALTER TABLE users ADD COLUMN balance INTEGER DEFAULT 0");
+    console.log("Migration: Added balance column to users table");
+  }
+} catch (err) {
+  console.log("Migration check:", err.message);
+}
+
 // Seed parking spots if table is empty
 const { count } = db.prepare("SELECT COUNT(*) AS count FROM parking_spots").get();
 if (count === 0) {

@@ -2,10 +2,20 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { getParkingSpotApi, type ParkingSpotDto } from "@/lib/api"
+import { getParkingSpotApi, getUserProfileApi, type ParkingSpotDto, type UserProfileDto } from "@/lib/api"
+import { useApp } from "@/lib/app-context"
 import { useTranslation } from "@/lib/i18n/language-context"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import {
   ArrowLeft,
   Car,
@@ -15,35 +25,53 @@ import {
   Minus,
   Plus,
   Clock,
+  AlertTriangle,
 } from "lucide-react"
 
 export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
   const router = useRouter()
+  const { token } = useApp()
   const { t } = useTranslation()
   const [spot, setSpot] = useState<ParkingSpotDto | null>(null)
+  const [userProfile, setUserProfile] = useState<UserProfileDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [hours, setHours] = useState(2)
   const [minutes, setMinutes] = useState(0)
   const [coveredParking, setCoveredParking] = useState(false)
   const [evCharging, setEvCharging] = useState(false)
+  const [showNegativeBalanceAlert, setShowNegativeBalanceAlert] = useState(false)
+
+  const RESERVATION_FEE = 500
 
   useEffect(() => {
     if (!spotId) return
     let cancelled = false
     setLoading(true)
-    getParkingSpotApi(spotId)
-      .then((data) => {
+    
+    const fetchData = async () => {
+      try {
+        const spotData = await getParkingSpotApi(spotId)
         if (!cancelled) {
-          setSpot(data)
-          setCoveredParking(!!data.hasCovered)
+          setSpot(spotData)
+          setCoveredParking(!!spotData.hasCovered)
         }
-      })
-      .catch((err) => console.error("Failed to load parking spot", err))
-      .finally(() => {
+        
+        if (token) {
+          const profileData = await getUserProfileApi(token)
+          if (!cancelled) {
+            setUserProfile(profileData)
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load data", err)
+      } finally {
         if (!cancelled) setLoading(false)
-      })
+      }
+    }
+    
+    fetchData()
     return () => { cancelled = true }
-  }, [spotId])
+  }, [spotId, token])
 
   if (loading) {
     return (
@@ -60,6 +88,33 @@ export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
         <Button variant="outline" onClick={() => router.back()}>{t("carpark.goBack")}</Button>
       </div>
     )
+  }
+
+  const userBalance = userProfile?.balance ?? 0
+  const hasNegativeBalance = userBalance < 0
+
+  function handleEnterNow() {
+    if (!token) {
+      router.push("/login")
+      return
+    }
+    if (hasNegativeBalance) {
+      setShowNegativeBalanceAlert(true)
+      return
+    }
+    router.push(`/booking/payment?spotId=${spot.id}&hours=${hours}&minutes=${minutes}&type=enter`)
+  }
+
+  function handleReserveLater() {
+    if (!token) {
+      router.push("/login")
+      return
+    }
+    if (hasNegativeBalance) {
+      setShowNegativeBalanceAlert(true)
+      return
+    }
+    router.push(`/booking/payment?spotId=${spot.id}&hours=${hours}&minutes=${minutes}&type=reserve`)
   }
 
   return (
@@ -178,23 +233,54 @@ export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
           </div>
         </div>
 
+        {/* Reservation Fee Info */}
+        <div className="mt-6 rounded-2xl bg-secondary/50 p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">{t("carpark.reservationFee")}</span>
+            <span className="text-sm font-semibold text-foreground">{RESERVATION_FEE} KZT</span>
+          </div>
+        </div>
+
         {/* Action buttons */}
         <div className="mt-6 flex flex-col gap-3">
           <Button
             className="h-14 rounded-xl bg-foreground text-base font-semibold text-background hover:bg-foreground/90"
-            onClick={() => router.push(`/booking/payment?spotId=${spot.id}&hours=${hours}&minutes=${minutes}`)}
+            onClick={handleEnterNow}
           >
             {t("carpark.enterNow")}
           </Button>
           <Button
             variant="outline"
             className="h-14 rounded-xl border-border text-base font-semibold text-foreground hover:bg-secondary"
-            onClick={() => router.push(`/booking/payment?spotId=${spot.id}&hours=${hours}&minutes=${minutes}`)}
+            onClick={handleReserveLater}
           >
-            {t("carpark.reserveAnother")}
+            {t("carpark.reserveAnother")} ({RESERVATION_FEE} KZT)
           </Button>
         </div>
       </div>
+
+      {/* Negative Balance Alert */}
+      <AlertDialog open={showNegativeBalanceAlert} onOpenChange={setShowNegativeBalanceAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+              <AlertTriangle className="h-8 w-8 text-destructive" />
+            </div>
+            <AlertDialogTitle className="text-center">{t("carpark.negativeBalanceTitle")}</AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
+              {t("carpark.negativeBalanceDesc")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+            <AlertDialogAction
+              className="w-full rounded-xl bg-foreground text-background hover:bg-foreground/90"
+              onClick={() => router.push("/profile")}
+            >
+              {t("carpark.topUpNow")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
