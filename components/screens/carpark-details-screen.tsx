@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { getParkingSpotApi, getUserProfileApi, type ParkingSpotDto, type UserProfileDto } from "@/lib/api"
+import { getParkingSpotApi, getUserProfileApi, createBookingApi, type ParkingSpotDto, type UserProfileDto } from "@/lib/api"
 import { useApp } from "@/lib/app-context"
 import { useTranslation } from "@/lib/i18n/language-context"
 import { Button } from "@/components/ui/button"
@@ -22,10 +22,10 @@ import {
   MapPin,
   Shield,
   Zap,
-  Minus,
-  Plus,
   Clock,
   AlertTriangle,
+  DoorOpen,
+  CalendarClock,
 } from "lucide-react"
 
 export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
@@ -35,12 +35,12 @@ export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
   const [spot, setSpot] = useState<ParkingSpotDto | null>(null)
   const [userProfile, setUserProfile] = useState<UserProfileDto | null>(null)
   const [loading, setLoading] = useState(true)
-  const [hours, setHours] = useState(2)
-  const [minutes, setMinutes] = useState(0)
   const [coveredParking, setCoveredParking] = useState(false)
   const [evCharging, setEvCharging] = useState(false)
   const [showNegativeBalanceAlert, setShowNegativeBalanceAlert] = useState(false)
   const [showNoSpotsAlert, setShowNoSpotsAlert] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const RESERVATION_FEE = 500
 
@@ -95,7 +95,7 @@ export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
   const hasNegativeBalance = userBalance < 0
   const hasNoAvailableSpots = spot.availableSpots <= 0
 
-  function handleEnterNow() {
+  async function handleEnterNow() {
     if (!token) {
       router.push("/login")
       return
@@ -108,10 +108,30 @@ export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
       setShowNoSpotsAlert(true)
       return
     }
-    router.push(`/booking/payment?spotId=${spot.id}&hours=${hours}&minutes=${minutes}&type=enter`)
+
+    // Create booking with "enter_now" type - no prepayment, pay on exit
+    setSubmitting(true)
+    setError(null)
+    try {
+      const booking = await createBookingApi(token, {
+        parkingSpotId: Number(spot.id),
+        price: 0, // No prepayment for enter now - pay on exit
+        duration: "Pay on exit",
+        durationMinutes: 0,
+        date: "Today",
+        startTime: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+        endTime: "—",
+        bookingType: "enter_now",
+      })
+      router.push(`/booking/confirmation?spotId=${spot.id}&bookingId=${booking.id}&type=enter_now`)
+    } catch (err: any) {
+      setError(err?.message || "Failed to create booking")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
-  function handleReserveLater() {
+  async function handleReserveLater() {
     if (!token) {
       router.push("/login")
       return
@@ -124,7 +144,27 @@ export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
       setShowNoSpotsAlert(true)
       return
     }
-    router.push(`/booking/payment?spotId=${spot.id}&hours=${hours}&minutes=${minutes}&type=reserve`)
+
+    // Create booking with "book_later" type - pay reservation fee immediately
+    setSubmitting(true)
+    setError(null)
+    try {
+      const booking = await createBookingApi(token, {
+        parkingSpotId: Number(spot.id),
+        price: RESERVATION_FEE, // Reservation fee
+        duration: "Reserved (6h window)",
+        durationMinutes: 0,
+        date: "Today",
+        startTime: "Later",
+        endTime: "—",
+        bookingType: "book_later",
+      })
+      router.push(`/booking/confirmation?spotId=${spot.id}&bookingId=${booking.id}&type=book_later&fee=${RESERVATION_FEE}`)
+    } catch (err: any) {
+      setError(err?.message || "Failed to create booking")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -160,52 +200,30 @@ export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
           </div>
         </div>
 
-        {/* Duration selector */}
+        {/* How it works */}
         <div className="mt-6">
-          <h3 className="mb-3 text-sm font-semibold text-foreground">{t("carpark.selectDuration")}</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">{t("carpark.howItWorks")}</h3>
           <div className="rounded-2xl bg-card p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-sm text-muted-foreground">{t("carpark.hours")}</span>
-                <div className="mt-1 flex items-center gap-4">
-                  <button
-                    onClick={() => setHours(Math.max(0, hours - 1))}
-                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-foreground"
-                    aria-label="Decrease hours"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                  <span className="w-8 text-center text-2xl font-bold text-foreground">{hours}</span>
-                  <button
-                    onClick={() => setHours(hours + 1)}
-                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-foreground"
-                    aria-label="Increase hours"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
+            <div className="flex flex-col gap-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">1</div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">{t("carpark.step1Title")}</p>
+                  <p className="text-xs text-muted-foreground">{t("carpark.step1Desc")}</p>
                 </div>
               </div>
-              <div className="text-3xl font-light text-border">:</div>
-              <div>
-                <span className="text-sm text-muted-foreground">{t("carpark.minutes")}</span>
-                <div className="mt-1 flex items-center gap-4">
-                  <button
-                    onClick={() => setMinutes(Math.max(0, minutes - 15))}
-                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-foreground"
-                    aria-label="Decrease minutes"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                  <span className="w-8 text-center text-2xl font-bold text-foreground">
-                    {String(minutes).padStart(2, "0")}
-                  </span>
-                  <button
-                    onClick={() => setMinutes(Math.min(45, minutes + 15))}
-                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-foreground"
-                    aria-label="Increase minutes"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
+              <div className="flex items-start gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">2</div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">{t("carpark.step2Title")}</p>
+                  <p className="text-xs text-muted-foreground">{t("carpark.step2Desc")}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">3</div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">{t("carpark.step3Title")}</p>
+                  <p className="text-xs text-muted-foreground">{t("carpark.step3Desc")}</p>
                 </div>
               </div>
             </div>
@@ -233,39 +251,52 @@ export function CarParkDetailsScreen({ spotId }: { spotId: string }) {
           </div>
         </div>
 
-        {/* Price summary */}
-        <div className="mt-6 rounded-2xl bg-accent/10 p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">{t("carpark.estimatedTotal")}</span>
-            <span className="text-2xl font-bold text-foreground">
-              {Math.round((hours + minutes / 60) * spot.pricePerHour)} KZT
-            </span>
+        {/* Pricing info */}
+        <div className="mt-6 rounded-2xl bg-secondary/50 p-4">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t("carpark.hourlyRate")}</span>
+              <span className="text-sm font-semibold text-foreground">{spot.pricePerHour} KZT/hr</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t("carpark.reservationFee")}</span>
+              <span className="text-sm font-semibold text-foreground">{RESERVATION_FEE} KZT</span>
+            </div>
           </div>
         </div>
 
-        {/* Reservation Fee Info */}
-        <div className="mt-6 rounded-2xl bg-secondary/50 p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">{t("carpark.reservationFee")}</span>
-            <span className="text-sm font-semibold text-foreground">{RESERVATION_FEE} KZT</span>
-          </div>
-        </div>
+        {error && (
+          <p className="mt-4 text-sm text-red-500">{error}</p>
+        )}
 
         {/* Action buttons */}
         <div className="mt-6 flex flex-col gap-3">
           <Button
             className="h-14 rounded-xl bg-foreground text-base font-semibold text-background hover:bg-foreground/90"
             onClick={handleEnterNow}
+            disabled={submitting}
           >
-            {t("carpark.enterNow")}
+            <DoorOpen className="mr-2 h-5 w-5" />
+            {submitting ? t("common.loading") : t("carpark.enterNow")}
           </Button>
+          <p className="text-center text-xs text-muted-foreground">{t("carpark.enterNowDesc")}</p>
+          
+          <div className="my-2 flex items-center gap-3">
+            <div className="flex-1 border-t border-border" />
+            <span className="text-xs text-muted-foreground">{t("carpark.or")}</span>
+            <div className="flex-1 border-t border-border" />
+          </div>
+
           <Button
             variant="outline"
             className="h-14 rounded-xl border-border text-base font-semibold text-foreground hover:bg-secondary"
             onClick={handleReserveLater}
+            disabled={submitting}
           >
+            <CalendarClock className="mr-2 h-5 w-5" />
             {t("carpark.reserveAnother")} ({RESERVATION_FEE} KZT)
           </Button>
+          <p className="text-center text-xs text-muted-foreground">{t("carpark.reserveDesc")}</p>
         </div>
       </div>
 

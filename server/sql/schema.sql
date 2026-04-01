@@ -44,9 +44,13 @@ CREATE TABLE IF NOT EXISTS bookings (
   price INTEGER NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('active', 'completed', 'reserved')),
   qr_code TEXT NOT NULL,
+  booking_type TEXT DEFAULT 'enter_now',
+  expires_at TEXT,
+  entered_at TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_bookings_user_id ON bookings(user_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status);
+CREATE INDEX IF NOT EXISTS idx_bookings_expires_at ON bookings(expires_at);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);

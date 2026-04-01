@@ -90,6 +90,8 @@ export interface BookingDto {
   qrCode: string
   bookingType?: "enter_now" | "book_later"
   expiresAt?: string
+  enteredAt?: string
+  pricePerHour?: number
 }
 
 export async function createBookingApi(token: string, payload: BookingPayload) {
@@ -196,6 +198,25 @@ export interface OpenBarrierResponse {
 
 export async function openBarrierApi(token: string, bookingId: string | number) {
   return request<OpenBarrierResponse>(`/bookings/${bookingId}/open-barrier`, {
+    method: "POST",
+    authToken: token,
+  })
+}
+
+export interface ExitBarrierResponse {
+  success: boolean
+  message?: string
+  error?: string
+  duration?: string
+  durationMinutes?: number
+  cost?: number
+  pricePerHour?: number
+  billedHours?: number
+  newBalance?: number
+}
+
+export async function exitBarrierApi(token: string, bookingId: string | number) {
+  return request<ExitBarrierResponse>(`/bookings/${bookingId}/exit-barrier`, {
     method: "POST",
     authToken: token,
   })

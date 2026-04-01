@@ -14,6 +14,7 @@ import {
   CalendarClock,
   DoorOpen,
   XCircle,
+  LogOut,
 } from "lucide-react"
 import { getBookingsApi, openBarrierApi, type BookingDto } from "@/lib/api"
 
@@ -79,6 +80,18 @@ export function ParkingHistoryScreen() {
   function expiryWindowLabel(booking: BookingDto): string {
     if (booking.bookingType === "book_later") return "6h window"
     return "10 min window"
+  }
+
+  // Helper: get elapsed time for active session
+  function getElapsedTime(booking: BookingDto): string {
+    if (!booking.enteredAt) return booking.duration || "—"
+    const enteredAt = new Date(booking.enteredAt)
+    const now = new Date()
+    const diffMs = now.getTime() - enteredAt.getTime()
+    const diffMinutes = Math.max(0, Math.floor(diffMs / 60000))
+    const hours = Math.floor(diffMinutes / 60)
+    const minutes = diffMinutes % 60
+    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`
   }
 
   async function handleOpenBarrier(bookingId: string | number) {
@@ -170,10 +183,9 @@ export function ParkingHistoryScreen() {
             </div>
             <div className="flex flex-col gap-3">
               {activeBookings.map((booking) => (
-                <button
+                <div
                   key={booking.id}
-                  className="w-full rounded-2xl border border-accent/20 bg-accent/10 p-4 text-left"
-                  onClick={() => router.push("/end-parking")}
+                  className="rounded-2xl border border-accent/20 bg-accent/10 p-4"
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent/20">
@@ -188,13 +200,23 @@ export function ParkingHistoryScreen() {
                       <div className="mt-2 flex items-center gap-3 text-xs">
                         <span className="flex items-center gap-1 font-medium text-accent">
                           <Clock className="h-3 w-3" />
-                          {booking.startTime} - {booking.endTime}
+                          {getElapsedTime(booking)}
                         </span>
-                        <span className="font-semibold text-foreground">{booking.price} KZT</span>
+                        <span className="text-muted-foreground">
+                          {booking.pricePerHour || 200} KZT/hr
+                        </span>
                       </div>
                     </div>
                   </div>
-                </button>
+                  {/* Exit Parking Button */}
+                  <Button
+                    className="mt-3 h-10 w-full rounded-xl bg-foreground text-background hover:bg-foreground/90"
+                    onClick={() => router.push(`/end-parking?bookingId=${booking.id}`)}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    {t("history.exitParking")}
+                  </Button>
+                </div>
               ))}
             </div>
           </section>
@@ -233,7 +255,9 @@ export function ParkingHistoryScreen() {
                           <Clock className="h-3 w-3" />
                           {booking.date} {booking.startTime}
                         </span>
-                        <span className="font-semibold text-foreground">{booking.price} KZT</span>
+                        {booking.price > 0 && (
+                          <span className="font-semibold text-foreground">{booking.price} KZT paid</span>
+                        )}
                       </div>
                       {/* Expiry info */}
                       <div className="mt-1 flex items-center gap-2 text-xs">
@@ -331,7 +355,7 @@ export function ParkingHistoryScreen() {
                       <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          {booking.date} {booking.startTime} - {booking.endTime}
+                          {booking.duration || `${booking.startTime} - ${booking.endTime}`}
                         </span>
                         <span className="font-semibold text-foreground">{booking.price} KZT</span>
                       </div>

@@ -25,35 +25,42 @@ const schemaPath = join(serverRoot, "sql", "schema.sql");
 const schema = readFileSync(schemaPath, "utf8");
 db.exec(schema);
 
-// Run migrations
-try {
-  // Check if balance column exists, if not add it
-  const tableInfo = db.prepare("PRAGMA table_info(users)").all();
-  const hasBalance = tableInfo.some(col => col.name === "balance");
-  if (!hasBalance) {
+// ---------- Run migrations for existing databases ----------
+function runMigrations() {
+  // Get current columns for users table
+  const usersCols = db.prepare("PRAGMA table_info(users)").all();
+  const userColNames = usersCols.map(col => col.name);
+  
+  // Get current columns for bookings table
+  const bookingsCols = db.prepare("PRAGMA table_info(bookings)").all();
+  const bookingColNames = bookingsCols.map(col => col.name);
+
+  // Users table migrations
+  if (!userColNames.includes("balance")) {
     db.exec("ALTER TABLE users ADD COLUMN balance INTEGER DEFAULT 0");
     console.log("Migration: Added balance column to users table");
   }
-} catch (err) {
-  console.log("Migration check (balance):", err.message);
-}
 
-// Migration 003: booking_type and expires_at columns on bookings
-try {
-  const bookingsCols = db.prepare("PRAGMA table_info(bookings)").all();
-  const hasBookingType = bookingsCols.some(col => col.name === "booking_type");
-  const hasExpiresAt = bookingsCols.some(col => col.name === "expires_at");
-  if (!hasBookingType) {
+  // Bookings table migrations
+  if (!bookingColNames.includes("booking_type")) {
     db.exec("ALTER TABLE bookings ADD COLUMN booking_type TEXT DEFAULT 'enter_now'");
-    console.log("Migration 003: Added booking_type column to bookings table");
+    console.log("Migration: Added booking_type column to bookings table");
   }
-  if (!hasExpiresAt) {
+  if (!bookingColNames.includes("expires_at")) {
     db.exec("ALTER TABLE bookings ADD COLUMN expires_at TEXT");
     db.exec("CREATE INDEX IF NOT EXISTS idx_bookings_expires_at ON bookings(expires_at)");
-    console.log("Migration 003: Added expires_at column to bookings table");
+    console.log("Migration: Added expires_at column to bookings table");
   }
+  if (!bookingColNames.includes("entered_at")) {
+    db.exec("ALTER TABLE bookings ADD COLUMN entered_at TEXT");
+    console.log("Migration: Added entered_at column to bookings table");
+  }
+}
+
+try {
+  runMigrations();
 } catch (err) {
-  console.log("Migration check (booking_type/expires_at):", err.message);
+  console.log("Migration error:", err.message);
 }
 
 // Seed parking spots if table is empty

@@ -11,6 +11,8 @@ import {
   Clock,
   DollarSign,
   QrCode,
+  Timer,
+  CalendarClock,
 } from "lucide-react"
 
 export function BookingConfirmationScreen() {
@@ -20,9 +22,12 @@ export function BookingConfirmationScreen() {
   const [spot, setSpot] = useState<ParkingSpotDto | null>(null)
 
   const spotId = searchParams.get("spotId") || ""
-  const price = searchParams.get("price") || "0"
-  const duration = searchParams.get("duration") || "2"
   const bookingId = searchParams.get("bookingId") || "BK-0000"
+  const bookingType = searchParams.get("type") || "enter_now"
+  const fee = searchParams.get("fee") || "0"
+
+  const isEnterNow = bookingType === "enter_now"
+  const isBookLater = bookingType === "book_later"
 
   useEffect(() => {
     if (!spotId) return
@@ -50,6 +55,7 @@ export function BookingConfirmationScreen() {
             {"✕"}
           </Button>
         </div>
+        
         {/* Success indicator */}
         <div className="mb-6 mt-4 flex h-16 w-16 items-center justify-center rounded-full bg-accent/10">
           <CheckCircle2 className="h-10 w-10 text-accent" />
@@ -57,8 +63,23 @@ export function BookingConfirmationScreen() {
         <h1 className="text-2xl font-bold text-foreground">{t("bookingConfirm.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("bookingConfirm.subtitle")}</p>
 
+        {/* Booking Type Badge */}
+        <div className="mt-4 flex items-center gap-2 rounded-full bg-accent/10 px-4 py-2">
+          {isEnterNow ? (
+            <>
+              <Timer className="h-4 w-4 text-accent" />
+              <span className="text-sm font-semibold text-accent">{t("bookingConfirm.enterNowType")}</span>
+            </>
+          ) : (
+            <>
+              <CalendarClock className="h-4 w-4 text-accent" />
+              <span className="text-sm font-semibold text-accent">{t("bookingConfirm.bookLaterType")}</span>
+            </>
+          )}
+        </div>
+
         {/* QR code */}
-        <div className="mt-8 rounded-2xl bg-card p-6 shadow-sm">
+        <div className="mt-6 rounded-2xl bg-card p-6 shadow-sm">
           <div className="flex h-44 w-44 items-center justify-center rounded-2xl bg-foreground">
             <div className="grid grid-cols-5 gap-1">
               {Array.from({ length: 25 }).map((_, i) => (
@@ -84,6 +105,24 @@ export function BookingConfirmationScreen() {
           <span className="text-sm font-semibold text-accent">{t("bookingConfirm.bookingId")}: {bookingId}</span>
         </div>
 
+        {/* Instructions based on booking type */}
+        <div className="mt-6 w-full rounded-2xl bg-secondary/50 p-4">
+          <h3 className="mb-2 text-sm font-semibold text-foreground">{t("bookingConfirm.nextSteps")}</h3>
+          {isEnterNow ? (
+            <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+              <p>1. {t("bookingConfirm.enterNowStep1")}</p>
+              <p>2. {t("bookingConfirm.enterNowStep2")}</p>
+              <p>3. {t("bookingConfirm.enterNowStep3")}</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+              <p>1. {t("bookingConfirm.bookLaterStep1")}</p>
+              <p>2. {t("bookingConfirm.bookLaterStep2")}</p>
+              <p>3. {t("bookingConfirm.bookLaterStep3")}</p>
+            </div>
+          )}
+        </div>
+
         {/* Booking details */}
         <div className="mt-6 w-full rounded-2xl bg-card p-5 shadow-sm">
           <h3 className="mb-4 text-sm font-semibold text-foreground">{t("bookingConfirm.details")}</h3>
@@ -95,20 +134,34 @@ export function BookingConfirmationScreen() {
             />
             <DetailRow
               icon={<Clock className="h-4 w-4 text-accent" />}
-              label={t("bookingConfirm.duration")}
-              value={`${duration}h 00m`}
+              label={t("bookingConfirm.validFor")}
+              value={isEnterNow ? t("bookingConfirm.tenMinutes") : t("bookingConfirm.sixHours")}
             />
+            {isBookLater && Number(fee) > 0 && (
+              <DetailRow
+                icon={<DollarSign className="h-4 w-4 text-accent" />}
+                label={t("bookingConfirm.reservationFee")}
+                value={`${fee} KZT`}
+              />
+            )}
             <DetailRow
               icon={<DollarSign className="h-4 w-4 text-accent" />}
-              label={t("bookingConfirm.totalPrice")}
-              value={`${price} KZT`}
+              label={t("bookingConfirm.parkingCost")}
+              value={isEnterNow ? t("bookingConfirm.payOnExit") : t("bookingConfirm.payOnExit")}
             />
           </div>
         </div>
 
-        <div className="mt-auto w-full pt-6">
+        <div className="mt-auto w-full pt-6 flex flex-col gap-3">
           <Button
             className="h-14 w-full rounded-xl bg-foreground text-base font-semibold text-background hover:bg-foreground/90"
+            onClick={() => router.push("/history")}
+          >
+            {t("bookingConfirm.viewBookings")}
+          </Button>
+          <Button
+            variant="outline"
+            className="h-12 w-full rounded-xl text-base font-semibold"
             onClick={() => router.push("/home")}
           >
             {t("bookingConfirm.goHome")}
