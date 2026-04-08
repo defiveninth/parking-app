@@ -346,4 +346,171 @@ router.post("/verify", (req, res) => {
   res.json({ valid: true });
 });
 
+// ============ STATISTICS ============
+
+// GET /admin/statistics - get dashboard statistics
+router.get("/statistics", async (req, res) => {
+  try {
+    // Total users
+    const usersResult = await query("SELECT COUNT(*) as count FROM users");
+    const totalUsers = usersResult.rows[0].count;
+
+    // Total parking spots
+    const parkingSpotsResult = await query("SELECT COUNT(*) as count FROM parking_spots");
+    const totalParkingSpots = parkingSpotsResult.rows[0].count;
+
+    // Total bookings
+    const bookingsResult = await query("SELECT COUNT(*) as count FROM bookings");
+    const totalBookings = bookingsResult.rows[0].count;
+
+    // Active bookings
+    const activeBookingsResult = await query("SELECT COUNT(*) as count FROM bookings WHERE status = 'active'");
+    const activeBookings = activeBookingsResult.rows[0].count;
+
+    // Total revenue
+    const revenueResult = await query("SELECT SUM(price) as total FROM bookings WHERE status = 'completed'");
+    const totalRevenue = revenueResult.rows[0].total || 0;
+
+    // Bookings by status
+    const bookingsByStatusResult = await query(`
+      SELECT status, COUNT(*) as count
+      FROM bookings
+      GROUP BY status
+    `);
+    const bookingsByStatus = bookingsByStatusResult.rows.map(row => ({
+      status: row.status,
+      count: row.count,
+    }));
+
+    // Revenue by day (last 7 days)
+    const revenueByDayResult = await query(`
+      SELECT 
+        date(created_at) as date,
+        SUM(price) as revenue,
+        COUNT(*) as bookings
+      FROM bookings
+      WHERE status = 'completed'
+        AND created_at >= datetime('now', '-7 days')
+      GROUP BY date(created_at)
+      ORDER BY date(created_at) ASC
+    `);
+    const revenueByDay = revenueByDayResult.rows.map(row => ({
+      date: row.date,
+      revenue: row.revenue,
+      bookings: row.bookings,
+    }));
+
+    // Revenue by month (last 12 months)
+    const revenueByMonthResult = await query(`
+      SELECT 
+        strftime('%Y-%m', created_at) as month,
+        SUM(price) as revenue,
+        COUNT(*) as bookings
+      FROM bookings
+      WHERE status = 'completed'
+        AND created_at >= datetime('now', '-12 months')
+      GROUP BY strftime('%Y-%m', created_at)
+      ORDER BY month ASC
+    `);
+    const revenueByMonth = revenueByMonthResult.rows.map(row => ({
+      month: row.month,
+      revenue: row.revenue,
+      bookings: row.bookings,
+    }));
+
+    // Top parking spots by usage
+    const topParkingSpotsResult = await query(`
+      SELECT 
+        ps.id,
+        ps.name,
+        ps.address,
+        COUNT(b.id) as booking_count,
+        SUM(b.price) as total_revenue
+      FROM parking_spots ps
+      LEFT JOIN bookings b ON b.parking_spot_id = ps.id
+      GROUP BY ps.id, ps.name, ps.address
+      ORDER BY booking_count DESC
+      LIMIT 10
+    `);
+    const topParkingSpots = topParkingSpotsResult.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      address: row.address,
+      bookingCount: row.booking_count,
+      totalRevenue: row.total_revenue || 0,
+    }));
+
+    // Average booking duration
+    const avgDurationResult = await query(`
+      SELECT AVG(duration_minutes) as avg_duration
+      FROM bookings
+      WHERE status = 'completed'
+    `);
+    const avgBookingDuration = avgDurationResult.rows[0].avg_duration || 0;
+
+    // User registration trend (last 30 days)
+    const userRegistrationResult = await query(`
+      SELECT 
+        date(created_at) as date,
+        COUNT(*) as registrations
+      FROM users
+      WHERE created_at >= datetime('now', '-30 days')
+      GROUP BY date(created_at)
+      ORDER BY date(created_at) ASC
+    `);
+    const userRegistrationTrend = userRegistrationResult.rows.map(row => ({
+      date: row.date,
+      registrations: row.registrations,
+    }));
+
+    // Booking types breakdown
+    const bookingTypesResult = await query(`
+      SELECT 
+        COALESCE(booking_type, 'enter_now') as type,
+        COUNT(*) as count
+      FROM bookings
+      GROUP BY booking_type
+    `);
+    const bookingTypes = bookingTypesResult.rows.map(row => ({
+      type: row.type,
+      count: row.count,
+    }));
+
+    // Peak hours (bookings by hour)
+    const peakHoursResult = await query(`
+      SELECT 
+        CAST(strftime('%H', created_at) AS INTEGER) as hour,
+        COUNT(*) as bookings
+      FROM bookings
+      GROUP BY hour
+      ORDER BY hour ASC
+    `);
+    const peakHours = peakHoursResult.rows.map(row => ({
+      hour: row.hour,
+      bookings: row.bookings,
+    }));
+
+    res.json({
+      overview: {
+        totalUsers,
+        totalParkingSpots,
+        totalBookings,
+        activeBookings,
+        totalRevenue,
+        avgBookingDuration: Math.round(avgBookingDuration),
+      },
+      bookingsByStatus,
+      revenueByDay,
+      revenueByMonth,
+      topParkingSpots,
+      userRegistrationTrend,
+      bookingTypes,
+      peakHours,
+    });
+  } catch (err) {
+    console.error("Admin statistics error:", err);
+    res.status(500).json({ error: "Failed to fetch statistics" });
+  }
+});
+
 export default router;

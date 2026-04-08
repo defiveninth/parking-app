@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Lock, Users, Car, Plus, Pencil, Trash2, LogOut, Menu, X, MapPin, Zap, Accessibility, Building2, Globe } from "lucide-react"
+import { Lock, Users, Car, Plus, Pencil, Trash2, LogOut, Menu, X, MapPin, Zap, Accessibility, Building2, Globe, BarChart3 } from "lucide-react"
 import {
   getAdminKey,
   setAdminKey,
@@ -26,13 +26,14 @@ import {
   createAdminParkingApi,
   updateAdminParkingApi,
   deleteAdminParkingApi,
+  getAdminStatisticsApi,
   type AdminUserDto,
   type AdminParkingDto,
 } from "@/lib/api"
 import { MapPicker } from "@/components/admin/map-picker"
 import { useTranslation, localeLabels, type Locale } from "@/lib/i18n/language-context"
 
-type TabValue = "users" | "parkings"
+type TabValue = "statistics" | "users" | "parkings"
 
 export default function AdminPage() {
   const { t, locale, setLocale } = useTranslation()
@@ -41,7 +42,7 @@ export default function AdminPage() {
   const [isAuthenticating, setIsAuthenticating] = useState(false)
   const [privateKey, setPrivateKey] = useState("")
   const [authError, setAuthError] = useState("")
-  const [activeTab, setActiveTab] = useState<TabValue>("users")
+  const [activeTab, setActiveTab] = useState<TabValue>("statistics")
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
@@ -154,6 +155,7 @@ export default function AdminPage() {
   }
 
   const navItems = [
+    { id: "statistics" as const, label: "Statistics", icon: BarChart3 },
     { id: "users" as const, label: t("admin.users"), icon: Users },
     { id: "parkings" as const, label: t("admin.parkings"), icon: Car },
   ]
@@ -264,11 +266,171 @@ export default function AdminPage() {
         {/* Content area */}
         <main className="flex-1 p-4 lg:p-8">
           <div className="mx-auto max-w-7xl">
+            {activeTab === "statistics" && <StatisticsTab />}
             {activeTab === "users" && <UsersTab />}
             {activeTab === "parkings" && <ParkingsTab />}
           </div>
         </main>
       </div>
+    </div>
+  )
+}
+
+// ============ STATISTICS TAB ============
+
+function StatisticsTab() {
+  const { t } = useTranslation()
+  const [stats, setStats] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  const loadStatistics = async () => {
+    try {
+      const data = await getAdminStatisticsApi()
+      setStats(data)
+    } catch (err) {
+      console.error("Failed to load statistics:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadStatistics()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">{t("common.loading")}</div>
+      </div>
+    )
+  }
+
+  if (!stats) {
+    return (
+      <div className="flex h-64 items-center justify-center text-muted-foreground">
+        Failed to load statistics
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h2 className="text-2xl font-bold text-foreground lg:text-3xl">Statistics Dashboard</h2>
+        <p className="mt-1 text-muted-foreground">Overview of your parking business metrics</p>
+      </div>
+
+      {/* Overview Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.overview.totalUsers}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Parking Spots</CardTitle>
+            <Car className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.overview.totalParkingSpots}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Bookings</CardTitle>
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.overview.totalBookings}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.overview.activeBookings} active now
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+            <Zap className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">₸{stats.overview.totalRevenue.toLocaleString()}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Bookings by Status</CardTitle>
+            <CardDescription>Current distribution</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-3">
+              {stats.bookingsByStatus.map((item: any) => (
+                <div key={item.status} className="flex items-center justify-between">
+                  <span className="text-sm capitalize">{item.status}</span>
+                  <Badge variant="secondary">{item.count}</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Parking Spots</CardTitle>
+            <CardDescription>By bookings</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[200px]">
+              <div className="flex flex-col gap-3">
+                {stats.topParkingSpots.slice(0, 5).map((spot: any) => (
+                  <div key={spot.id} className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{spot.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">{spot.address}</p>
+                    </div>
+                    <Badge variant="outline">{spot.bookingCount}</Badge>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Revenue Trend */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Activity</CardTitle>
+          <CardDescription>Revenue trend (last 7 days)</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-2">
+            {stats.revenueByDay.map((day: any) => (
+              <div key={day.date} className="flex items-center justify-between rounded-lg border p-3">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">
+                    {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{day.bookings} bookings</span>
+                </div>
+                <span className="text-lg font-semibold">₸{day.revenue.toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

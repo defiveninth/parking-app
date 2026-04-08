@@ -407,3 +407,52 @@ export async function updateAdminParkingApi(
 export async function deleteAdminParkingApi(id: number) {
   return adminRequest<{ success: boolean }>(`/parking/${id}`, { method: "DELETE" })
 }
+
+// Admin Statistics DTOs
+export interface AdminStatisticsDto {
+  overview: {
+    totalUsers: number
+    totalParkingSpots: number
+    totalBookings: number
+    activeBookings: number
+    totalRevenue: number
+    avgBookingDuration: number
+  }
+  bookingsByStatus: Array<{
+    status: string
+    count: number
+  }>
+  revenueByDay: Array<{
+    date: string
+    revenue: number
+    bookings: number
+  }>
+  revenueByMonth: Array<{
+    month: string
+    revenue: number
+    bookings: number
+  }>
+  topParkingSpots: Array<{
+    id: number
+    name: string
+    address: string
+    bookingCount: number
+    totalRevenue: number
+  }>
+  userRegistrationTrend: Array<{
+    date: string
+    registrations: number
+  }>
+  bookingTypes: Array<{
+    type: string
+    count: number
+  }>
+  peakHours: Array<{
+    hour: number
+    bookings: number
+  }>
+}
+
+export async function getAdminStatisticsApi() {
+  return adminRequest<AdminStatisticsDto>("/statistics", { method: "GET" })
+}
