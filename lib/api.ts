@@ -456,3 +456,105 @@ export interface AdminStatisticsDto {
 export async function getAdminStatisticsApi() {
   return adminRequest<AdminStatisticsDto>("/statistics", { method: "GET" })
 }
+
+// ============ SUPPORT TICKETS ============
+
+export interface SupportTicketDto {
+  id: number
+  user_id: number
+  subject: string
+  status: "open" | "in_progress" | "closed"
+  priority: "low" | "medium" | "high" | "urgent"
+  created_at: string
+  updated_at: string
+  user_name?: string
+  user_email?: string
+  message_count?: number
+  last_message?: string
+  messages?: SupportMessageDto[]
+}
+
+export interface SupportMessageDto {
+  id: number
+  ticket_id: number
+  user_id?: number
+  is_admin: number
+  message: string
+  created_at: string
+  sender_name?: string
+}
+
+// User Support APIs
+export async function getSupportTicketsApi() {
+  return request<SupportTicketDto[]>("/support/tickets", { method: "GET" })
+}
+
+export async function getSupportTicketApi(id: number) {
+  return request<SupportTicketDto>(`/support/tickets/${id}`, { method: "GET" })
+}
+
+export async function createSupportTicketApi(data: {
+  subject: string
+  message: string
+  priority?: "low" | "medium" | "high" | "urgent"
+}) {
+  return request<SupportTicketDto>("/support/tickets", {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+}
+
+export async function addSupportMessageApi(ticketId: number, message: string) {
+  return request<{ id: number; created_at: string }>(
+    `/support/tickets/${ticketId}/messages`,
+    {
+      method: "POST",
+      body: JSON.stringify({ message }),
+    }
+  )
+}
+
+export async function closeSupportTicketApi(ticketId: number) {
+  return request<{ success: boolean }>(`/support/tickets/${ticketId}/close`, {
+    method: "PATCH",
+  })
+}
+
+// Admin Support APIs
+export async function getAdminSupportTicketsApi() {
+  return adminRequest<SupportTicketDto[]>("/support/tickets", { method: "GET" })
+}
+
+export async function getAdminSupportTicketApi(id: number) {
+  return adminRequest<SupportTicketDto>(`/support/tickets/${id}`, { method: "GET" })
+}
+
+export async function addAdminSupportMessageApi(ticketId: number, message: string) {
+  return adminRequest<{ id: number; created_at: string }>(
+    `/support/tickets/${ticketId}/messages`,
+    {
+      method: "POST",
+      body: JSON.stringify({ message }),
+    }
+  )
+}
+
+export async function updateSupportTicketStatusApi(
+  ticketId: number,
+  status: "open" | "in_progress" | "closed"
+) {
+  return adminRequest<{ success: boolean }>(`/support/tickets/${ticketId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  })
+}
+
+export async function updateSupportTicketPriorityApi(
+  ticketId: number,
+  priority: "low" | "medium" | "high" | "urgent"
+) {
+  return adminRequest<{ success: boolean }>(`/support/tickets/${ticketId}/priority`, {
+    method: "PATCH",
+    body: JSON.stringify({ priority }),
+  })
+}

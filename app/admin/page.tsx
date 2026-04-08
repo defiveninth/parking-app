@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Lock, Users, Car, Plus, Pencil, Trash2, LogOut, Menu, X, MapPin, Zap, Accessibility, Building2, Globe, BarChart3 } from "lucide-react"
+import { Lock, Users, Car, Plus, Pencil, Trash2, LogOut, Menu, X, MapPin, Zap, Accessibility, Building2, Globe, BarChart3, MessageCircle, Send, Clock } from "lucide-react"
 import {
   getAdminKey,
   setAdminKey,
@@ -27,13 +27,20 @@ import {
   updateAdminParkingApi,
   deleteAdminParkingApi,
   getAdminStatisticsApi,
+  getAdminSupportTicketsApi,
+  getAdminSupportTicketApi,
+  addAdminSupportMessageApi,
+  updateSupportTicketStatusApi,
+  updateSupportTicketPriorityApi,
   type AdminUserDto,
   type AdminParkingDto,
+  type SupportTicketDto,
 } from "@/lib/api"
 import { MapPicker } from "@/components/admin/map-picker"
+import { SupportTab } from "@/components/admin/support-tab"
 import { useTranslation, localeLabels, type Locale } from "@/lib/i18n/language-context"
 
-type TabValue = "statistics" | "users" | "parkings"
+type TabValue = "statistics" | "users" | "parkings" | "support"
 
 export default function AdminPage() {
   const { t, locale, setLocale } = useTranslation()
@@ -158,6 +165,7 @@ export default function AdminPage() {
     { id: "statistics" as const, label: t("admin.statistics"), icon: BarChart3 },
     { id: "users" as const, label: t("admin.users"), icon: Users },
     { id: "parkings" as const, label: t("admin.parkings"), icon: Car },
+    { id: "support" as const, label: t("support.title"), icon: MessageCircle },
   ]
 
   return (
@@ -269,6 +277,7 @@ export default function AdminPage() {
             {activeTab === "statistics" && <StatisticsTab />}
             {activeTab === "users" && <UsersTab />}
             {activeTab === "parkings" && <ParkingsTab />}
+            {activeTab === "support" && <SupportTab />}
           </div>
         </main>
       </div>

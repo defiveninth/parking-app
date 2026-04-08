@@ -513,4 +513,182 @@ router.get("/statistics", async (req, res) => {
   }
 });
 
+// ============ SUPPORT TICKETS ============
+
+// GET /admin/support/tickets - Get all support tickets
+router.get("/support/tickets", async (req, res) => {
+  try {
+    const result = await query(
+      `SELECT 
+        st.id,
+        st.subject,
+        st.status,
+        st.priority,
+        st.created_at,
+        st.updated_at,
+        u.name as user_name,
+        u.email as user_email,
+        u.id as user_id,
+        (SELECT COUNT(*) FROM support_messages WHERE ticket_id = st.id) as message_count,
+        (SELECT message FROM support_messages WHERE ticket_id = st.id ORDER BY created_at DESC LIMIT 1) as last_message
+      FROM support_tickets st
+      JOIN users u ON st.user_id = u.id
+      ORDER BY st.updated_at DESC`
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Admin get tickets error:", err);
+    res.status(500).json({ error: "Failed to fetch tickets" });
+  }
+});
+
+// GET /admin/support/tickets/:id - Get a specific ticket with all messages
+router.get("/support/tickets/:id", async (req, res) => {
+  const ticketId = parseInt(req.params.id);
+
+  try {
+    // Get ticket details
+    const ticketResult = await query(
+      `SELECT st.*, u.name as user_name, u.email as user_email
+      FROM support_tickets st
+      JOIN users u ON st.user_id = u.id
+      WHERE st.id = ?`,
+      [ticketId]
+    );
+
+    if (ticketResult.rows.length === 0) {
+      return res.status(404).json({ error: "Ticket not found" });
+    }
+
+    // Get all messages for this ticket
+    const messagesResult = await query(
+      `SELECT 
+        sm.id,
+        sm.message,
+        sm.is_admin,
+        sm.created_at,
+        CASE 
+          WHEN sm.is_admin = 1 THEN 'Admin'
+          ELSE u.name
+        END as sender_name
+      FROM support_messages sm
+      LEFT JOIN users u ON sm.user_id = u.id
+      WHERE sm.ticket_id = ?
+      ORDER BY sm.created_at ASC`,
+      [ticketId]
+    );
+
+    const ticket = ticketResult.rows[0];
+    ticket.messages = messagesResult.rows;
+
+    res.json(ticket);
+  } catch (err) {
+    console.error("Admin get ticket error:", err);
+    res.status(500).json({ error: "Failed to fetch ticket" });
+  }
+});
+
+// POST /admin/support/tickets/:id/messages - Admin reply to ticket
+router.post("/support/tickets/:id/messages", async (req, res) => {
+  const ticketId = parseInt(req.params.id);
+  const { message } = req.body;
+
+  if (!message) {
+    return res.status(400).json({ error: "Message is required" });
+  }
+
+  try {
+    // Verify ticket exists
+    const ticketResult = await query(
+      "SELECT id FROM support_tickets WHERE id = ?",
+      [ticketId]
+    );
+
+    if (ticketResult.rows.length === 0) {
+      return res.status(404).json({ error: "Ticket not found" });
+    }
+
+    // Add the admin message
+    const messageResult = await query(
+      `INSERT INTO support_messages (ticket_id, user_id, is_admin, message)
+      VALUES (?, NULL, 1, ?)
+      RETURNING id, created_at`,
+      [ticketId, message]
+    );
+
+    // Update ticket's updated_at and set to in_progress if open
+    await query(
+      `UPDATE support_tickets 
+      SET updated_at = datetime('now'),
+          status = CASE WHEN status = 'open' THEN 'in_progress' ELSE status END
+      WHERE id = ?`,
+      [ticketId]
+    );
+
+    res.status(201).json(messageResult.rows[0]);
+  } catch (err) {
+    console.error("Admin add message error:", err);
+    res.status(500).json({ error: "Failed to add message" });
+  }
+});
+
+// PATCH /admin/support/tickets/:id/status - Update ticket status
+router.patch("/support/tickets/:id/status", async (req, res) => {
+  const ticketId = parseInt(req.params.id);
+  const { status } = req.body;
+
+  if (!["open", "in_progress", "closed"].includes(status)) {
+    return res.status(400).json({ error: "Invalid status" });
+  }
+
+  try {
+    const result = await query(
+      `UPDATE support_tickets 
+      SET status = ?, updated_at = datetime('now')
+      WHERE id = ?
+      RETURNING id`,
+      [status, ticketId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Ticket not found" });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Admin update ticket status error:", err);
+    res.status(500).json({ error: "Failed to update ticket status" });
+  }
+});
+
+// PATCH /admin/support/tickets/:id/priority - Update ticket priority
+router.patch("/support/tickets/:id/priority", async (req, res) => {
+  const ticketId = parseInt(req.params.id);
+  const { priority } = req.body;
+
+  if (!["low", "medium", "high", "urgent"].includes(priority)) {
+    return res.status(400).json({ error: "Invalid priority" });
+  }
+
+  try {
+    const result = await query(
+      `UPDATE support_tickets 
+      SET priority = ?, updated_at = datetime('now')
+      WHERE id = ?
+      RETURNING id`,
+      [priority, ticketId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Ticket not found" });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Admin update ticket priority error:", err);
+    res.status(500).json({ error: "Failed to update ticket priority" });
+  }
+});
+
 export default router;

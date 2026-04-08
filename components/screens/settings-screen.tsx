@@ -16,6 +16,7 @@ import {
   LogOut,
   Check,
   X,
+  MessageCircle,
 } from "lucide-react"
 
 export function SettingsScreen() {
@@ -27,6 +28,7 @@ export function SettingsScreen() {
   const settingsItems = [
     { icon: CreditCard, label: t("settings.paymentMethod"), href: "/payment-method" },
     { icon: User, label: t("settings.account"), href: "/profile" },
+    { icon: MessageCircle, label: t("support.title"), href: "/support" },
     { icon: Globe, label: t("settings.language"), href: null, action: () => setShowLangPicker(true) },
     { icon: FileText, label: t("settings.termsOfUse"), href: null },
     { icon: Shield, label: t("settings.privacyPolicy"), href: null },
