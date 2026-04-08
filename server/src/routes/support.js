@@ -1,13 +1,13 @@
 import { Router } from "express";
 import { query } from "../db.js";
-import { authenticateToken } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 
 // ============ USER SUPPORT ENDPOINTS ============
 
 // GET /support/tickets - Get all tickets for the authenticated user
-router.get("/tickets", authenticateToken, async (req, res) => {
+router.get("/tickets", requireAuth, async (req, res) => {
   try {
     const result = await query(
       `SELECT 
@@ -22,7 +22,7 @@ router.get("/tickets", authenticateToken, async (req, res) => {
       FROM support_tickets st
       WHERE st.user_id = ?
       ORDER BY st.updated_at DESC`,
-      [req.user.id]
+      [req.user.userId]
     );
 
     res.json(result.rows);
@@ -33,7 +33,7 @@ router.get("/tickets", authenticateToken, async (req, res) => {
 });
 
 // GET /support/tickets/:id - Get a specific ticket with all messages
-router.get("/tickets/:id", authenticateToken, async (req, res) => {
+router.get("/tickets/:id", requireAuth, async (req, res) => {
   const ticketId = parseInt(req.params.id);
 
   try {
@@ -43,7 +43,7 @@ router.get("/tickets/:id", authenticateToken, async (req, res) => {
       FROM support_tickets st
       JOIN users u ON st.user_id = u.id
       WHERE st.id = ? AND st.user_id = ?`,
-      [ticketId, req.user.id]
+      [ticketId, req.user.userId]
     );
 
     if (ticketResult.rows.length === 0) {
@@ -76,7 +76,7 @@ router.get("/tickets/:id", authenticateToken, async (req, res) => {
 });
 
 // POST /support/tickets - Create a new support ticket
-router.post("/tickets", authenticateToken, async (req, res) => {
+router.post("/tickets", requireAuth, async (req, res) => {
   const { subject, message, priority = "medium" } = req.body;
 
   if (!subject || !message) {
@@ -89,7 +89,7 @@ router.post("/tickets", authenticateToken, async (req, res) => {
       `INSERT INTO support_tickets (user_id, subject, priority, status)
       VALUES (?, ?, ?, 'open')
       RETURNING id`,
-      [req.user.id, subject, priority]
+      [req.user.userId, subject, priority]
     );
 
     const ticketId = ticketResult.rows[0].id;
@@ -98,7 +98,7 @@ router.post("/tickets", authenticateToken, async (req, res) => {
     await query(
       `INSERT INTO support_messages (ticket_id, user_id, is_admin, message)
       VALUES (?, ?, 0, ?)`,
-      [ticketId, req.user.id, message]
+      [ticketId, req.user.userId, message]
     );
 
     res.status(201).json({ 
@@ -115,7 +115,7 @@ router.post("/tickets", authenticateToken, async (req, res) => {
 });
 
 // POST /support/tickets/:id/messages - Add a message to a ticket
-router.post("/tickets/:id/messages", authenticateToken, async (req, res) => {
+router.post("/tickets/:id/messages", requireAuth, async (req, res) => {
   const ticketId = parseInt(req.params.id);
   const { message } = req.body;
 
@@ -127,7 +127,7 @@ router.post("/tickets/:id/messages", authenticateToken, async (req, res) => {
     // Verify ticket belongs to user
     const ticketResult = await query(
       "SELECT id FROM support_tickets WHERE id = ? AND user_id = ?",
-      [ticketId, req.user.id]
+      [ticketId, req.user.userId]
     );
 
     if (ticketResult.rows.length === 0) {
@@ -139,7 +139,7 @@ router.post("/tickets/:id/messages", authenticateToken, async (req, res) => {
       `INSERT INTO support_messages (ticket_id, user_id, is_admin, message)
       VALUES (?, ?, 0, ?)
       RETURNING id, created_at`,
-      [ticketId, req.user.id, message]
+      [ticketId, req.user.userId, message]
     );
 
     // Update ticket's updated_at
@@ -156,7 +156,7 @@ router.post("/tickets/:id/messages", authenticateToken, async (req, res) => {
 });
 
 // PATCH /support/tickets/:id/close - Close a ticket
-router.patch("/tickets/:id/close", authenticateToken, async (req, res) => {
+router.patch("/tickets/:id/close", requireAuth, async (req, res) => {
   const ticketId = parseInt(req.params.id);
 
   try {
@@ -165,7 +165,7 @@ router.patch("/tickets/:id/close", authenticateToken, async (req, res) => {
       SET status = 'closed', updated_at = datetime('now')
       WHERE id = ? AND user_id = ?
       RETURNING id`,
-      [ticketId, req.user.id]
+      [ticketId, req.user.userId]
     );
 
     if (result.rows.length === 0) {

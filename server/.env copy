@@ -1,9 +1,0 @@
-# Server port (default: 4000)
-PORT=4000
-
-# JWT secret for signing auth tokens (change this in production!)
-JWT_SECRET=change-me-to-a-random-secret
-
-# Path to SQLite database file (default: server/data/parking_app.sqlite)
-# SQLITE_PATH=./data/parking_app.sqlite
-ADMIN_PRIVATE_KEY=0x4c0883a69102937d6231471b5dbb6204fe512961708279e8e9e7a0e9b0fbbd

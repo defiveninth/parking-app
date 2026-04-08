@@ -4,10 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "server": "cd server && npm run dev",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "server": "cd server && npm run dev",
+    "dev:all": "concurrently \"npm run dev\" \"npm run server\" --names \"NEXT,API\" --prefix-colors \"blue,green\""
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

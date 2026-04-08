@@ -25,6 +25,11 @@ const schemaPath = join(serverRoot, "sql", "schema.sql");
 const schema = readFileSync(schemaPath, "utf8");
 db.exec(schema);
 
+// ---------- Run support tables schema ----------
+const supportSchemaPath = join(serverRoot, "sql", "add_support.sql");
+const supportSchema = readFileSync(supportSchemaPath, "utf8");
+db.exec(supportSchema);
+
 // ---------- Run migrations for existing databases ----------
 function runMigrations() {
   // Get current columns for users table

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useTranslation } from "@/lib/i18n/language-context"
+import { useApp } from "@/lib/app-context"
 import { PhoneFrame } from "@/components/phone-frame"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -31,6 +32,7 @@ export default function SupportPage() {
 
 function SupportScreen() {
   const { t } = useTranslation()
+  const { token } = useApp()
   const [tickets, setTickets] = useState<SupportTicketDto[]>([])
   const [selectedTicket, setSelectedTicket] = useState<SupportTicketDto | null>(null)
   const [loading, setLoading] = useState(true)
@@ -38,8 +40,9 @@ function SupportScreen() {
   const [newMessage, setNewMessage] = useState("")
 
   const loadTickets = async () => {
+    if (!token) return
     try {
-      const data = await getSupportTicketsApi()
+      const data = await getSupportTicketsApi(token)
       setTickets(data)
     } catch (err) {
       console.error("Failed to load tickets:", err)
@@ -49,8 +52,9 @@ function SupportScreen() {
   }
 
   const loadTicketDetails = async (ticketId: number) => {
+    if (!token) return
     try {
-      const data = await getSupportTicketApi(ticketId)
+      const data = await getSupportTicketApi(token, ticketId)
       setSelectedTicket(data)
     } catch (err) {
       console.error("Failed to load ticket details:", err)
@@ -59,13 +63,13 @@ function SupportScreen() {
 
   useEffect(() => {
     loadTickets()
-  }, [])
+  }, [token])
 
   const handleSendMessage = async () => {
-    if (!selectedTicket || !newMessage.trim()) return
+    if (!token || !selectedTicket || !newMessage.trim()) return
 
     try {
-      await addSupportMessageApi(selectedTicket.id, newMessage)
+      await addSupportMessageApi(token, selectedTicket.id, newMessage)
       setNewMessage("")
       await loadTicketDetails(selectedTicket.id)
     } catch (err) {
@@ -74,10 +78,10 @@ function SupportScreen() {
   }
 
   const handleCloseTicket = async () => {
-    if (!selectedTicket) return
+    if (!token || !selectedTicket) return
 
     try {
-      await closeSupportTicketApi(selectedTicket.id)
+      await closeSupportTicketApi(token, selectedTicket.id)
       setSelectedTicket(null)
       await loadTickets()
     } catch (err) {
@@ -277,17 +281,18 @@ function CreateTicketDialog({
   onCreated: () => void
 }) {
   const { t } = useTranslation()
+  const { token } = useApp()
   const [subject, setSubject] = useState("")
   const [message, setMessage] = useState("")
   const [priority, setPriority] = useState<"low" | "medium" | "high" | "urgent">("medium")
   const [submitting, setSubmitting] = useState(false)
 
   const handleSubmit = async () => {
-    if (!subject.trim() || !message.trim()) return
+    if (!token || !subject.trim() || !message.trim()) return
 
     setSubmitting(true)
     try {
-      await createSupportTicketApi({ subject, message, priority })
+      await createSupportTicketApi(token, { subject, message, priority })
       onCreated()
     } catch (err) {
       console.error("Failed to create ticket:", err)

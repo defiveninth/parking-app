@@ -485,38 +485,50 @@ export interface SupportMessageDto {
 }
 
 // User Support APIs
-export async function getSupportTicketsApi() {
-  return request<SupportTicketDto[]>("/support/tickets", { method: "GET" })
-}
-
-export async function getSupportTicketApi(id: number) {
-  return request<SupportTicketDto>(`/support/tickets/${id}`, { method: "GET" })
-}
-
-export async function createSupportTicketApi(data: {
-  subject: string
-  message: string
-  priority?: "low" | "medium" | "high" | "urgent"
-}) {
-  return request<SupportTicketDto>("/support/tickets", {
-    method: "POST",
-    body: JSON.stringify(data),
+export async function getSupportTicketsApi(token: string) {
+  return request<SupportTicketDto[]>("/support/tickets", { 
+    method: "GET",
+    authToken: token,
   })
 }
 
-export async function addSupportMessageApi(ticketId: number, message: string) {
+export async function getSupportTicketApi(token: string, id: number) {
+  return request<SupportTicketDto>(`/support/tickets/${id}`, { 
+    method: "GET",
+    authToken: token,
+  })
+}
+
+export async function createSupportTicketApi(
+  token: string,
+  data: {
+    subject: string
+    message: string
+    priority?: "low" | "medium" | "high" | "urgent"
+  }
+) {
+  return request<SupportTicketDto>("/support/tickets", {
+    method: "POST",
+    body: JSON.stringify(data),
+    authToken: token,
+  })
+}
+
+export async function addSupportMessageApi(token: string, ticketId: number, message: string) {
   return request<{ id: number; created_at: string }>(
     `/support/tickets/${ticketId}/messages`,
     {
       method: "POST",
       body: JSON.stringify({ message }),
+      authToken: token,
     }
   )
 }
 
-export async function closeSupportTicketApi(ticketId: number) {
+export async function closeSupportTicketApi(token: string, ticketId: number) {
   return request<{ success: boolean }>(`/support/tickets/${ticketId}/close`, {
     method: "PATCH",
+    authToken: token,
   })
 }
 
