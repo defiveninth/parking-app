@@ -155,7 +155,7 @@ export default function AdminPage() {
   }
 
   const navItems = [
-    { id: "statistics" as const, label: "Statistics", icon: BarChart3 },
+    { id: "statistics" as const, label: t("admin.statistics"), icon: BarChart3 },
     { id: "users" as const, label: t("admin.users"), icon: Users },
     { id: "parkings" as const, label: t("admin.parkings"), icon: Car },
   ]
@@ -309,7 +309,7 @@ function StatisticsTab() {
   if (!stats) {
     return (
       <div className="flex h-64 items-center justify-center text-muted-foreground">
-        Failed to load statistics
+        {t("stats.noData")}
       </div>
     )
   }
@@ -317,15 +317,15 @@ function StatisticsTab() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h2 className="text-2xl font-bold text-foreground lg:text-3xl">Statistics Dashboard</h2>
-        <p className="mt-1 text-muted-foreground">Overview of your parking business metrics</p>
+        <h2 className="text-2xl font-bold text-foreground lg:text-3xl">{t("stats.title")}</h2>
+        <p className="mt-1 text-muted-foreground">{t("stats.subtitle")}</p>
       </div>
 
       {/* Overview Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("stats.totalUsers")}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -335,7 +335,7 @@ function StatisticsTab() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Parking Spots</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("stats.parkingSpots")}</CardTitle>
             <Car className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -345,20 +345,20 @@ function StatisticsTab() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Bookings</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("stats.totalBookings")}</CardTitle>
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.overview.totalBookings}</div>
             <p className="text-xs text-muted-foreground">
-              {stats.overview.activeBookings} active now
+              {stats.overview.activeBookings} {t("stats.activeNow")}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("stats.totalRevenue")}</CardTitle>
             <Zap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -371,8 +371,8 @@ function StatisticsTab() {
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Bookings by Status</CardTitle>
-            <CardDescription>Current distribution</CardDescription>
+            <CardTitle>{t("stats.bookingsByStatus")}</CardTitle>
+            <CardDescription>{t("stats.currentDistribution")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-3">
@@ -388,8 +388,8 @@ function StatisticsTab() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Top Parking Spots</CardTitle>
-            <CardDescription>By bookings</CardDescription>
+            <CardTitle>{t("stats.topParkingSpots")}</CardTitle>
+            <CardDescription>{t("stats.byBookings")}</CardDescription>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[200px]">
@@ -412,8 +412,8 @@ function StatisticsTab() {
       {/* Revenue Trend */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>Revenue trend (last 7 days)</CardDescription>
+          <CardTitle>{t("stats.recentActivity")}</CardTitle>
+          <CardDescription>{t("stats.revenueTrend")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-2">
@@ -423,7 +423,7 @@ function StatisticsTab() {
                   <span className="text-sm font-medium">
                     {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </span>
-                  <span className="text-xs text-muted-foreground">{day.bookings} bookings</span>
+                  <span className="text-xs text-muted-foreground">{day.bookings} {t("stats.bookings")}</span>
                 </div>
                 <span className="text-lg font-semibold">₸{day.revenue.toLocaleString()}</span>
               </div>

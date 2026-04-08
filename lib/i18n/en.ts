@@ -264,6 +264,26 @@ export const en = {
   "admin.disabledAccess": "Disabled Access",
   "admin.createdAt": "Created",
   "admin.spots": "spots",
+  "admin.statistics": "Statistics",
+
+  // Statistics
+  "stats.title": "Statistics Dashboard",
+  "stats.subtitle": "Overview of your parking business metrics",
+  "stats.totalUsers": "Total Users",
+  "stats.parkingSpots": "Parking Spots",
+  "stats.totalBookings": "Total Bookings",
+  "stats.activeNow": "active now",
+  "stats.totalRevenue": "Total Revenue",
+  "stats.avgDuration": "Avg Duration",
+  "stats.minutes": "min",
+  "stats.bookingsByStatus": "Bookings by Status",
+  "stats.currentDistribution": "Current distribution",
+  "stats.topParkingSpots": "Top Parking Spots",
+  "stats.byBookings": "By bookings",
+  "stats.recentActivity": "Recent Activity",
+  "stats.revenueTrend": "Revenue trend (last 7 days)",
+  "stats.bookings": "bookings",
+  "stats.noData": "No data available",
 } as const
 
 export type TranslationKey = keyof typeof en
