@@ -255,6 +255,7 @@ async function adminRequest<T>(
     ...rest,
     headers: {
       "Content-Type": "application/json",
+      'ngrok-skip-browser-warning': 'true',
       "X-Private-Key": privateKey,
       ...(headers || {}),
     },
@@ -280,6 +281,7 @@ export async function verifyAdminKeyApi(key: string): Promise<boolean> {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      'ngrok-skip-browser-warning': 'true',
       "X-Private-Key": key,
     },
   })
