@@ -10,6 +10,7 @@ async function request<T>(
     ...rest,
     headers: {
       "Content-Type": "application/json",
+      'ngrok-skip-browser-warning': 'true',
       ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
       ...(headers || {}),
     },
